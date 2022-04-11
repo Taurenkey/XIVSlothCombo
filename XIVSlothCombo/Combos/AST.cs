@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Party;
 using System.Linq;
 using System.Reflection;
 
+
 namespace XIVSlothComboPlugin.Combos
 {
     internal static class AST
@@ -111,61 +112,13 @@ namespace XIVSlothComboPlugin.Combos
             public const string
                 AstroEssentialDignity = "ASTCustomEssentialDignity";
         }
-
-        public static class MeleeCardTargets
-        {
-            public const string
-                Monk = "monk",
-                Dragoon = "dragoon",
-                Ninja = "ninja",
-                Reaper = "reaper",
-                Samurai = "samurai",
-                Pugilist = "pugilist",
-                Lancer = "lancer",
-                Rogue = "rogue";
-        }
-
-        public static class RangedCardTargets
-        {
-            public const string
-                Bard = "bard",
-                Machinist = "machinist",
-                Dancer = "dancer",
-                RedMage = "red mage",
-                BlackMage = "black mage",
-                Summoner = "summoner",
-                BlueMage = "blue mage",
-                Archer = "archer",
-                Thaumaturge = "thaumaturge",
-                Arcanist = "arcanist";
-
-        }
-
-        public static class TankCardTargets
-        {
-            public const string
-                Paladin = "paladin",
-                Warrior = "warrior",
-                DarkKnight = "dark knight",
-                Gunbreaker = "gunbreaker",
-                Gladiator = "gladiator",
-                Marauder = "marauder";
-        }
-
-        public static class HealerCardTargets
-        {
-            public const string
-                WhiteMage = "white mage",
-                Astrologian = "astrologian",
-                Scholar = "scholar",
-                Sage = "sage",
-                Conjurer = "conjurer";
-        }
     }
 
     internal class AstrologianCardsOnDrawFeaturelikewhat : CustomCombo
     {
+
         private bool GetTarget = false;
+
         protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.AstrologianCardsOnDrawFeaturelikewhat;
 
         protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
@@ -173,10 +126,9 @@ namespace XIVSlothComboPlugin.Combos
             if (actionID == AST.Play)
             {
                 var gauge = GetJobGauge<ASTGauge>();
-                var haveCard = HasEffect(AST.Buffs.Balance) || HasEffect(AST.Buffs.Bole) || HasEffect(AST.Buffs.Arrow) || HasEffect(AST.Buffs.Spear) || HasEffect(AST.Buffs.Ewer) || HasEffect(AST.Buffs.Spire);
-
                 if (!gauge.ContainsSeal(SealType.NONE) && IsEnabled(CustomComboPreset.AstrologianAstrodyneOnPlayFeature) && (gauge.DrawnCard != CardType.NONE || GetCooldown(AST.Draw).CooldownRemaining > 30))
                     return AST.Astrodyne;
+
 
                 if (haveCard)
                 {
@@ -187,9 +139,11 @@ namespace XIVSlothComboPlugin.Combos
                     }
 
                     return OriginalHook(AST.Play);
-                }
+                 }
+
 
                 GetTarget = true;
+
                 return AST.Draw;
             }
 
@@ -278,8 +232,8 @@ namespace XIVSlothComboPlugin.Combos
             return false;
 
         }
-    }
 
+    }
 
     internal class AstrologianCrownPlayFeature : CustomCombo
     {
