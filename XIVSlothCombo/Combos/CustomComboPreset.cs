@@ -2464,21 +2464,21 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Magick Barrier to Addle Feature", "Changes Magick Barrier to Addle when on cooldown.", RDM.JobID, 820, "", "")]
         RDM_MagickBarrierAddle = 13821,
 
+        [Variant]
+        [CustomComboInfo("Rampart Option", "Use Variant Rampart on cooldown. Replaces Jolts.", RDM.JobID)]
+        RDM_Variant_Rampart = 13830,
 
-        //TODO Revisit once RDM is in a better place. 
-        //[Variant]
-        //[VariantParent(RdmAny)]
-        //[CustomComboInfo("Rampart Option", "Use Variant Rampart on cooldown.", RDM.JobID)]
-        //RDM_Variant_Rampart = 13830,
+        [Variant]
+        [CustomComboInfo("Raise Option", "Turn Swiftcast into Variant Raise whenever you have the Swiftcast or Dualcast buffs.", RDM.JobID)]
+        RDM_Variant_Raise = 13831,
 
-        //[Variant]
-        //[CustomComboInfo("Raise Option", "Turn Swiftcast into Variant Raise whenever you have the Swiftcast buff.", RDM.JobID)]
-        //RDM_Variant_Raise = 13831,
+        [Variant]
+        [CustomComboInfo("Cure Option", "Use Variant Cure when HP is below set threshold. Replaces Jolts.", RDM.JobID)]
+        RDM_Variant_Cure = 13832,
 
-        //[Variant]
-        //[VariantParent(RdmAny)]
-        //[CustomComboInfo("Cure Option", "Use Variant Cure when HP is below set threshold.", RDM.JobID)]
-        //RDM_Variant_Cure = 13832,
+        [Variant]
+        [CustomComboInfo("Cure on Vercure Option", "Replaces Vercure with Variant Cure.", RDM.JobID)]
+        RDM_Variant_Cure2 = 13833,
         #endregion
 
         #endregion

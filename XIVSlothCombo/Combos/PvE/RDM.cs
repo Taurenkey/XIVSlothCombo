@@ -106,6 +106,7 @@ namespace XIVSlothCombo.Combos.PvE
             public const string RDM_MeleeFinisher_OnAction = "RDM_MeleeFinisher_OnAction";
             public const string RDM_Lucid_Threshold = "RDM_LucidDreaming_Threshold";
             public const string RDM_MoulinetRange = "RDM_MoulinetRange";
+            public const string RDM_VariantCure = "RDM_VariantCure";
         }
 
 
@@ -303,6 +304,25 @@ namespace XIVSlothCombo.Combos.PvE
                     }
                 }
                 //END_RDM_BALANCE_OPENER
+
+                //VARIANTS
+                if (IsEnabled(CustomComboPreset.RDM_Variant_Cure) && 
+                    IsEnabled(Variant.VariantCure) &&
+                    actionID is Jolt or Jolt2 && 
+                    PlayerHealthPercentageHp() <= GetOptionValue(Config.RDM_VariantCure))
+                    return Variant.VariantCure;
+                
+                if (IsEnabled(CustomComboPreset.RDM_Variant_Cure2) &&
+                    IsEnabled(Variant.VariantCure) &&
+                    actionID is 7514)
+                    return Variant.VariantCure;
+
+                if (IsEnabled(CustomComboPreset.RDM_Variant_Rampart) &&
+                    IsEnabled(Variant.VariantRampart) &&
+                    actionID is Jolt or Jolt2 &&
+                    IsOffCooldown(Variant.VariantRampart) &&
+                    CanSpellWeave(actionID))
+                    return Variant.VariantRampart;
 
                 //RDM_ST_MANAFICATIONEMBOLDEN
                 if (IsEnabled(CustomComboPreset.RDM_ST_MeleeCombo_ManaEmbolden)
@@ -843,10 +863,14 @@ namespace XIVSlothCombo.Combos.PvE
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.RDM_Raise;
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
             {
-                if (actionID is All.Swiftcast && level >= Levels.Verraise)
+                if (actionID is All.Swiftcast)
                 {
-                    if (GetCooldown(All.Swiftcast).CooldownRemaining > 0 ||     // Condition 1: Swiftcast is on cooldown
-                        HasEffect(Buffs.Dualcast))                              // Condition 2: Swiftcast is available, but we have Dualcast)
+                    if (HasEffect(All.Buffs.Swiftcast) && IsEnabled(CustomComboPreset.SMN_Variant_Raise) && IsEnabled(Variant.VariantRaise))
+                        return Variant.VariantRaise;
+
+                    if (LevelChecked(Verraise) &&
+                        (GetCooldown(All.Swiftcast).CooldownRemaining > 0 ||     // Condition 1: Swiftcast is on cooldown
+                        HasEffect(Buffs.Dualcast)))                              // Condition 2: Swiftcast is available, but we have Dualcast)
                         return Verraise;
                 }
 
