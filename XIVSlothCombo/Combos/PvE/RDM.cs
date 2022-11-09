@@ -26,6 +26,7 @@ namespace XIVSlothCombo.Combos.PvE
             Scatter = 7509,
             Verstone = 7511,
             Verfire = 7510,
+            Vercure = 7514,
             Jolt = 7503,
             Jolt2 = 7524,
             Verholy = 7526,
@@ -314,7 +315,7 @@ namespace XIVSlothCombo.Combos.PvE
                 
                 if (IsEnabled(CustomComboPreset.RDM_Variant_Cure2) &&
                     IsEnabled(Variant.VariantCure) &&
-                    actionID is 7514)
+                    actionID is Vercure)
                     return Variant.VariantCure;
 
                 if (IsEnabled(CustomComboPreset.RDM_Variant_Rampart) &&
