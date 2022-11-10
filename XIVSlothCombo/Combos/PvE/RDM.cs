@@ -113,7 +113,7 @@ namespace XIVSlothCombo.Combos.PvE
 
         internal class RDM_Main_Combos : CustomCombo
         {
-            protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.RdmAny;
+            protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.RDM_DPS;
 
             internal static bool inOpener = false;
             internal static bool readyOpener = false;
