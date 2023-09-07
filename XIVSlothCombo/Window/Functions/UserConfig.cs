@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Logging;
 using Dalamud.Utility;
 using ImGuiNET;
 using System;
@@ -10,6 +11,7 @@ using XIVSlothCombo.Combos;
 using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Combos.PvP;
 using XIVSlothCombo.Core;
+using XIVSlothCombo.CustomComboNS.Functions;
 using XIVSlothCombo.Data;
 using XIVSlothCombo.Services;
 
@@ -481,10 +483,6 @@ namespace XIVSlothCombo.Window.Functions
             {
                 ImGui.Indent();
                 if (descriptionColor == new Vector4()) descriptionColor = ImGuiColors.DalamudWhite;
-                //ImGui.PushItemWidth(itemWidth);
-                //ImGui.SameLine();
-                //ImGui.Dummy(new Vector2(21, 0));
-                //ImGui.SameLine();
                 bool[]? values = PluginConfiguration.GetCustomBoolArrayValue(config);
 
                 //If new saved options or amount of choices changed, resize and save
@@ -495,7 +493,7 @@ namespace XIVSlothCombo.Window.Functions
                     Service.Configuration.Save();
                 }
 
-                ImGui.BeginTable($"Grid###{config}", 4);
+                ImGui.BeginTable($"Grid###{config}", columns, ImGuiTableFlags.SizingFixedFit);
                 ImGui.TableNextRow();
                 //Convert the 2D array of names and descriptions into radio buttons
                 for (int idx = 0; idx < totalChoices; idx++)
@@ -505,6 +503,7 @@ namespace XIVSlothCombo.Window.Functions
                     string checkboxDescription = nameAndDesc[idx, 1];
 
                     ImGui.PushStyleColor(ImGuiCol.Text, descriptionColor);
+                    ImGui.PushItemWidth(itemWidth);
                     if (ImGui.Checkbox($"{checkBoxName}###{config}{idx}", ref values[idx]))
                     {
                         PluginConfiguration.SetCustomBoolArrayValue(config, values);
@@ -519,9 +518,6 @@ namespace XIVSlothCombo.Window.Functions
                     }
 
                     ImGui.PopStyleColor();
-
-                    if (((idx + 1) % columns) == 0)
-                        ImGui.TableNextRow();
                 }
                 ImGui.EndTable();
                 ImGui.Unindent();
@@ -1114,6 +1110,63 @@ namespace XIVSlothCombo.Window.Functions
         {
             double sliderAsDouble = Convert.ToDouble(sliderIncrement);
             return ((int)Math.Round(i / sliderAsDouble)) * (int)sliderIncrement;
+        }
+
+        internal static void DrawPriorityInput(UserIntArray config, int maxValues, int currentItem, string customLabel = "")
+        {
+            if (config.Count != maxValues || config.Any(x => x == 0))
+            {
+                config.Clear(maxValues);
+                for (int i = 1; i <= maxValues; i++)
+                {
+                    config[i - 1] = i;
+                }
+            }
+
+            int curVal = config[currentItem];
+            int oldVal = config[currentItem];
+
+            InfoBox box = new()
+            {
+                Color = Colors.Blue,
+                BorderThickness = 1f,
+                CurveRadius = 3f,
+                AutoResize = true,
+                HasMaxWidth = true,
+                IsSubBox = true,
+                ContentsAction = () => 
+                {
+                    if (customLabel.IsNullOrEmpty())
+                    {
+                        ImGui.TextUnformatted($"Priority: ");
+                    }
+                    else
+                    {
+                        ImGui.TextUnformatted(customLabel);
+                    }
+                    ImGui.SameLine();
+                    ImGui.PushItemWidth(100f);
+
+                    if (ImGui.InputInt($"###Priority{config.Name}{currentItem}", ref curVal))
+                    {
+                        for (int i = 0; i < maxValues; i++)
+                        {
+                            if (i == currentItem)
+                                continue;
+
+                            if (config[i] == curVal)
+                            {
+                                config[i] = oldVal;
+                                config[currentItem] = curVal;
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+
+            box.Draw();
+            ImGui.Spacing();
         }
     }
 
@@ -2169,6 +2222,152 @@ namespace XIVSlothCombo.Window.Functions
 
             if (preset == CustomComboPreset.WAR_AoE_Overpower_Infuriate)
                 UserConfig.DrawSliderInt(0, 50, WAR.Config.WAR_InfuriateAoEGauge, "Use when gauge is under or equal to");
+
+            if (preset == CustomComboPreset.WAR_ST_StormsPath_Defensives)
+            {
+                UserConfig.DrawGridMultiChoice(WAR.Config.WAR_Adv_Cooldowns_Choice, 4, new string[,]{
+                    {"Rampart", "" },
+                    {"Arm's Length", "" },
+                    {"Reprisal", "" },
+                    {"Thrill of Battle", "" },
+                    {"Vengeance", "" },
+                    {"Raw Intuition / Bloodwhetting", "" },
+                    {"Shake It Off", "" },
+                    {"Equilibrium", "" }
+                }, 900);
+
+                ImGui.Spacing();
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[0])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Rampart, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 0, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[1])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_ArmsLength, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 1, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[2])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Reprisal, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 2, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[3])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_ThrillOfBattle, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ThrillOfBattle)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 3, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ThrillOfBattle)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[4])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Vengeance, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Vengeance)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 4, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Vengeance)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[5])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Intuition, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.RawIntuition)} / {ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Bloodwhetting)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.RawIntuition)} / {ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Bloodwhetting)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[6])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Shake, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ShakeItOff)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 6, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ShakeItOff)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_Adv_Cooldowns_Choice[7])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_Adv_Cooldowns_Equilibrium, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Equilibrium)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_Cooldowns_Priority, 8, 7, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Equilibrium)} Priority: ");
+                    ImGui.Unindent();
+                }
+
+            }
+
+            if (preset == CustomComboPreset.WAR_AoE_Overpower_Defensives)
+            {
+                UserConfig.DrawGridMultiChoice(WAR.Config.WAR_AoE_Adv_Cooldowns_Choice, 4, new string[,]{
+                    {"Rampart", "" },
+                    {"Arm's Length", "" },
+                    {"Reprisal", "" },
+                    {"Thrill of Battle", "" },
+                    {"Vengeance", "" },
+                    {"Raw Intuition / Bloodwhetting", "" },
+                    {"Shake It Off", "" },
+                    {"Equilibrium", "" }
+                }, 900);
+
+                ImGui.Spacing();
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[0])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Rampart, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 0, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[1])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_ArmsLength, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 1, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[2])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Reprisal, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 2, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[3])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_ThrillOfBattle, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ThrillOfBattle)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 3, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ThrillOfBattle)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[4])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Vengeance, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Vengeance)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 4, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Vengeance)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[5])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Intuition, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.RawIntuition)} / {ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Bloodwhetting)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.RawIntuition)} / {ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Bloodwhetting)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[6])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Shake, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ShakeItOff)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 6, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.ShakeItOff)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (WAR.Config.WAR_AoE_Adv_Cooldowns_Choice[7])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, WAR.Config.WAR_AoE_Adv_Cooldowns_Equilibrium, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Equilibrium)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(WAR.Config.WAR_Adv_AoE_Cooldowns_Priority, 8, 7, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.WARActions.Equilibrium)} Priority: ");
+                    ImGui.Unindent();
+                }
+
+            }
 
             #endregion
             // ====================================================================================

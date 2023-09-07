@@ -3496,6 +3496,14 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Steel Cyclone / Decimate Option", "Adds Steel Cyclone / Decimate to Advanced Mode.", WAR.JobID)]
         WAR_AoE_Overpower_Decimate = 18028,
 
+        [ParentCombo(WAR_ST_StormsPath)]
+        [CustomComboInfo("Defensive Cooldowns Option", "Use defensive cooldowns from the selection below. Where multiple cooldowns meet the HP requirement, it will prioritise from lowest to highest on the priority setting.", WAR.JobID)]
+        WAR_ST_StormsPath_Defensives = 18029,
+
+        [ParentCombo(WAR_AoE_Overpower)]
+        [CustomComboInfo("Defensive Cooldowns Option", "Use defensive cooldowns from the selection below. Where multiple cooldowns meet the HP requirement, it will prioritise from lowest to highest on the priority setting.", WAR.JobID)]
+        WAR_AoE_Overpower_Defensives = 18030,
+
         // Last value = 18028
 
         #endregion

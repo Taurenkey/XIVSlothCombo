@@ -17,5 +17,12 @@ namespace XIVSlothCombo.Extensions
                 (list[n], list[k]) = (list[k], list[n]);
             }
         }
+
+        public static void SwapValues<T>(this T[] source, long index1, long index2)
+        {
+            T temp = source[index1];
+            source[index1] = source[index2];
+            source[index2] = temp;
+        }
     }
 }

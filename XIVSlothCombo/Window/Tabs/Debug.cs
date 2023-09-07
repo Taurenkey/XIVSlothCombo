@@ -5,6 +5,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Statuses;
 using ImGuiNET;
 using XIVSlothCombo.Combos;
+using XIVSlothCombo.Combos.JobHelpers;
 using XIVSlothCombo.CustomComboNS;
 using XIVSlothCombo.CustomComboNS.Functions;
 using XIVSlothCombo.Data;
@@ -58,9 +59,9 @@ namespace XIVSlothCombo.Window.Tabs
                 ImGui.TextUnformatted($"LAST SPELL: {ActionWatching.GetActionName(ActionWatching.LastSpell)}");
                 ImGui.TextUnformatted($"LAST ABILITY: {ActionWatching.GetActionName(ActionWatching.LastAbility)}");
                 ImGui.TextUnformatted($"ZONE: {Service.ClientState.TerritoryType}");
-                ImGui.BeginChild("BLUSPELLS", new Vector2(250, 100), false);
-                ImGui.TextUnformatted($"SELECTED BLU SPELLS:\n{string.Join("\n", Service.Configuration.ActiveBLUSpells.Select(x => ActionWatching.GetActionName(x)).OrderBy(x => x))}");
-                ImGui.EndChild();
+                ImGui.TextUnformatted($"Has Defensive?: {Defensives.HasCooldownBuff()}");
+                ImGui.TextUnformatted($"Has Just Used Defensive?: {Defensives.JustUsedCooldown()}");
+                ImGui.TextUnformatted($"Number of Cooldowns?: {Defensives.NumberOfCooldownsActive()}");
 
             }
 

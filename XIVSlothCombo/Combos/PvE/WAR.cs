@@ -1,8 +1,13 @@
 using Dalamud.Game.ClientState.JobGauge.Types;
 using Dalamud.Game.ClientState.Statuses;
+using Dalamud.Logging;
+using System;
+using System.Linq;
+using XIVSlothCombo.Combos.JobHelpers;
 using XIVSlothCombo.Combos.PvE.Content;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.CustomComboNS;
+using XIVSlothCombo.CustomComboNS.Functions;
 
 namespace XIVSlothCombo.Combos.PvE
 {
@@ -61,6 +66,33 @@ namespace XIVSlothCombo.Combos.PvE
                 WAR_DecimateGauge = "WAR_DecimateGauge",
                 WAR_InfuriateSTGauge = "WAR_InfuriateSTGauge",
                 WAR_InfuriateAoEGauge = "WAR_InfuriateAoEGauge";
+
+            public static UserBoolArray
+                WAR_Adv_Cooldowns_Choice = new("WAR_Adv_Cooldowns_Choice"),
+                WAR_AoE_Adv_Cooldowns_Choice = new("WAR_AoE_Adv_Cooldowns_Choice");
+
+            public static UserIntArray
+                WAR_Adv_Cooldowns_Priority = new("WAR_Adv_Cooldowns_Priority"),
+                WAR_Adv_AoE_Cooldowns_Priority = new("WAR_Adv_AoE_Cooldowns_Priority");
+
+            public static UserInt
+                WAR_Adv_Cooldowns_Rampart = new("WAR_Adv_Cooldowns_Rampart"),
+                WAR_Adv_Cooldowns_ArmsLength = new("WAR_Adv_Cooldowns_ArmsLength"),
+                WAR_Adv_Cooldowns_Reprisal = new("WAR_Adv_Cooldowns_Reprisal"),
+                WAR_Adv_Cooldowns_ThrillOfBattle = new("WAR_Adv_Cooldowns_ThrillOfBattle"),
+                WAR_Adv_Cooldowns_Vengeance = new("WAR_Adv_Cooldowns_Vengeance"),
+                WAR_Adv_Cooldowns_Intuition = new("WAR_Adv_Cooldowns_Intuition"),
+                WAR_Adv_Cooldowns_Shake = new("WAR_Adv_Cooldowns_Shake"),
+                WAR_Adv_Cooldowns_Equilibrium = new("WAR_Adv_Cooldowns_Equilibrium"),
+                WAR_AoE_Adv_Cooldowns_Rampart = new("WAR_AoE_Adv_Cooldowns_Rampart"),
+                WAR_AoE_Adv_Cooldowns_ArmsLength = new("WAR_AoE_Adv_Cooldowns_ArmsLength"),
+                WAR_AoE_Adv_Cooldowns_Reprisal = new("WAR_AoE_Adv_Cooldowns_Reprisal"),
+                WAR_AoE_Adv_Cooldowns_ThrillOfBattle = new("WAR_AoE_Adv_Cooldowns_ThrillOfBattle"),
+                WAR_AoE_Adv_Cooldowns_Vengeance = new("WAR_AoE_Adv_Cooldowns_Vengeance"),
+                WAR_AoE_Adv_Cooldowns_Intuition = new("WAR_AoE_Adv_Cooldowns_Intuition"),
+                WAR_AoE_Adv_Cooldowns_Shake = new("WAR_AoE_Adv_Cooldowns_Shake"),
+                WAR_AoE_Adv_Cooldowns_Equilibrium = new("WAR_AoE_Adv_Cooldowns_Equilibrium");
+
         }
 
         // Replace Storm's Path with Storm's Path combo and overcap feature on main combo to fellcleave
@@ -90,6 +122,20 @@ namespace XIVSlothCombo.Combos.PvE
                     //Sub Storm's Eye level check
                     if (IsEnabled(CustomComboPreset.WAR_ST_StormsPath_InnerRelease) && CanWeave(actionID) && IsOffCooldown(OriginalHook(Berserk)) && LevelChecked(Berserk) && !LevelChecked(StormsEye) && InCombat())
                         return OriginalHook(Berserk);
+
+                    if (IsEnabled(CustomComboPreset.WAR_ST_StormsPath_Defensives) && CanWeave(actionID) && !Defensives.HasCooldownBuff() && !Defensives.JustUsedCooldown())
+                    {
+                        foreach (var prio in Config.WAR_Adv_Cooldowns_Priority.Items.OrderBy(x => x))
+                        {
+                            var index = Config.WAR_Adv_Cooldowns_Priority.IndexOf(prio);
+                            var isEnabled = Config.WAR_Adv_Cooldowns_Choice[index];
+                            if (!isEnabled) continue;
+
+                            int health = Defensives.GetMatchingConfig(index, true, out uint action);
+                            if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                return action;
+                        }
+                    }
 
                     if (HasEffect(Buffs.SurgingTempest) && InCombat())
                     {
@@ -203,6 +249,20 @@ namespace XIVSlothCombo.Combos.PvE
                     //Sub Mythril Tempest level check
                     if (IsEnabled(CustomComboPreset.WAR_AoE_Overpower_InnerRelease) && CanWeave(actionID) && IsOffCooldown(OriginalHook(Berserk)) && LevelChecked(Berserk) && !LevelChecked(MythrilTempest) && InCombat())
                         return OriginalHook(Berserk);
+
+                    if (IsEnabled(CustomComboPreset.WAR_AoE_Overpower_Defensives) && CanWeave(actionID) && !Defensives.HasCooldownBuff() && !Defensives.JustUsedCooldown())
+                    {
+                        foreach (var prio in Config.WAR_Adv_AoE_Cooldowns_Priority.Items.OrderBy(x => x))
+                        {
+                            var index = Config.WAR_Adv_AoE_Cooldowns_Priority.IndexOf(prio);
+                            var isEnabled = Config.WAR_AoE_Adv_Cooldowns_Choice[index];
+                            if (!isEnabled) continue;
+
+                            int health = Defensives.GetMatchingConfig(index, false, out uint action);
+                            if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                return action;
+                        }
+                    }
 
                     if (HasEffect(Buffs.SurgingTempest) && InCombat())
                     {
