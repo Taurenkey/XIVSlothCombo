@@ -1694,6 +1694,125 @@ namespace XIVSlothCombo.Window.Functions
             if (preset == CustomComboPreset.PLD_Variant_Cure)
                 UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_VariantCure, "HP% to be at or under", 200);
 
+            if (preset == CustomComboPreset.PLD_ST_Advanced_Defensives)
+            {
+                UserConfig.DrawGridMultiChoice(PLD.Config.PLD_Adv_Cooldowns_Choice, 3, new string[,]{
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)}", "" }
+                }, 900);
+
+                ImGui.Spacing();
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[0])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_Rampart, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 0, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[1])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_ArmsLength, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 1, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[2])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_Reprisal, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 2, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[3])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_Sentinel, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 3, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[4])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_Bulwark, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 4, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_Adv_Cooldowns_Choice[5])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_DivineVeil, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} Priority: ");
+                    ImGui.Unindent();
+                }
+            }
+
+            if (preset == CustomComboPreset.PLD_AoE_Advanced_Defensives)
+            {
+                UserConfig.DrawGridMultiChoice(PLD.Config.PLD_AoE_Adv_Cooldowns_Choice, 3, new string[,]{
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)}", "" },
+                    {$"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Hallowed)}", "" }
+                }, 900);
+
+                ImGui.Spacing();
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[0])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_Rampart, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 0, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Rampart)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[1])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_ArmsLength, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 1, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.ArmsLength)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[2])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_Reprisal, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 2, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.AllActions.Reprisal)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[3])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_Sentinel, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 3, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Sentinel)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[4])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_Bulwark, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 4, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[5])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_DivineVeil, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)} Priority: ");
+                    ImGui.Unindent();
+                }
+                if (PLD.Config.PLD_AoE_Adv_Cooldowns_Choice[6])
+                {
+                    ImGui.Indent();
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_AoE_Adv_Cooldowns_Hallowed, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Hallowed)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_AoE_Cooldowns_Priority, 7, 6, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Hallowed)} Priority: ");
+                    ImGui.Unindent();
+                }
+            }
 
             #endregion
             // ====================================================================================

@@ -6,6 +6,7 @@ using ECommons.DalamudServices;
 using XIVSlothCombo.CustomComboNS.Functions;
 using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Data;
+using Newtonsoft.Json.Serialization;
 
 namespace XIVSlothCombo.Combos.JobHelpers
 {
@@ -56,6 +57,24 @@ namespace XIVSlothCombo.Combos.JobHelpers
                 Bloodwhetting = 25751;
         }
 
+        public static class PLDBuffs
+        {
+            public const ushort
+                Sentinel = 74,
+                Bulwark = 77,
+                DivineVeil = 1362,
+                Hallowed = 82;
+        }
+
+        public static class PLDActions
+        {
+            public const uint
+                Sentinel = 17,
+                Bulwark = 22,
+                DivineVeil = 3540,
+                Hallowed = 30;
+        }
+
         private static List<FieldInfo> GetConstants(this Type type)
         {
             FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Public |
@@ -80,6 +99,15 @@ namespace XIVSlothCombo.Combos.JobHelpers
             {
                 case WAR.JobID:
                     foreach (var act in typeof(WARActions).GetConstants())
+                    {
+                        uint val = (uint)act.GetValue(null)!;
+
+                        if (CustomComboFunctions.WasLastAction(val))
+                            return true;
+                    }
+                    break;
+                case PLD.JobID:
+                    foreach (var act in typeof(PLDActions).GetConstants())
                     {
                         uint val = (uint)act.GetValue(null)!;
 
@@ -113,6 +141,15 @@ namespace XIVSlothCombo.Combos.JobHelpers
                             return true;
                     }
                     break;
+                case PLD.JobID:
+                    foreach (var buff in typeof(PLDBuffs).GetConstants())
+                    {
+                        ushort val = (ushort)buff.GetValue(null)!;
+
+                        if (CustomComboFunctions.HasEffect(val))
+                            return true;
+                    }
+                    break;
             }
 
             return false;
@@ -134,6 +171,15 @@ namespace XIVSlothCombo.Combos.JobHelpers
             {
                 case WAR.JobID:
                     foreach (var buff in typeof(WARBuffs).GetConstants())
+                    {
+                        ushort val = (ushort)buff.GetValue(null)!;
+
+                        if (CustomComboFunctions.HasEffect(val))
+                            output++;
+                    }
+                    break;
+                case PLD.JobID:
+                    foreach (var buff in typeof(PLDBuffs).GetConstants())
                     {
                         ushort val = (ushort)buff.GetValue(null)!;
 
@@ -176,6 +222,34 @@ namespace XIVSlothCombo.Combos.JobHelpers
                     case 7:
                         action = WARActions.Equilibrium;
                         return isST ? WAR.Config.WAR_Adv_Cooldowns_Equilibrium : WAR.Config.WAR_AoE_Adv_Cooldowns_Equilibrium;
+                }
+            }
+
+            if (CustomComboFunctions.LocalPlayer.ClassJob.Id == PLD.JobID)
+            {
+                switch (i)
+                {
+                    case 0:
+                        action = AllActions.Rampart;
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_Rampart : PLD.Config.PLD_AoE_Adv_Cooldowns_Rampart;
+                    case 1:
+                        action = AllActions.ArmsLength;
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_ArmsLength : PLD.Config.PLD_AoE_Adv_Cooldowns_ArmsLength;
+                    case 2:
+                        action = AllActions.Reprisal;
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_Reprisal : PLD.Config.PLD_AoE_Adv_Cooldowns_Reprisal;
+                    case 3:
+                        action = PLDActions.Sentinel;
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_Sentinel : PLD.Config.PLD_AoE_Adv_Cooldowns_Sentinel;
+                    case 4:
+                        action = PLDActions.Bulwark;
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_Bulwark : PLD.Config.PLD_AoE_Adv_Cooldowns_Bulwark;
+                    case 5:
+                        action = CustomComboFunctions.OriginalHook(PLDActions.DivineVeil);
+                        return isST ? PLD.Config.PLD_Adv_Cooldowns_DivineVeil : PLD.Config.PLD_AoE_Adv_Cooldowns_DivineVeil;
+                    case 6:
+                        action = PLDActions.Hallowed;
+                        return PLD.Config.PLD_AoE_Adv_Cooldowns_Hallowed;
                 }
             }
 

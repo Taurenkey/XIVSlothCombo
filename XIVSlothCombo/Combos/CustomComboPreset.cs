@@ -2251,6 +2251,22 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Ultimatum Option", "Use Variant Ultimatum on cooldown.", PLD.JobID)]
         PLD_Variant_Ultimatum = 11032,
 
+        [ParentCombo(PLD_ST_AdvancedMode)]
+        [CustomComboInfo("Defensive Cooldowns Option", "Use defensive cooldowns from the selection below. Where multiple cooldowns meet the HP requirement, it will prioritise from lowest to highest on the priority setting.", PLD.JobID)]
+        PLD_ST_Advanced_Defensives = 11033,
+
+        [ParentCombo(PLD_AoE_AdvancedMode)]
+        [CustomComboInfo("Defensive Cooldowns Option", "Use defensive cooldowns from the selection below. Where multiple cooldowns meet the HP requirement, it will prioritise from lowest to highest on the priority setting.", PLD.JobID)]
+        PLD_AoE_Advanced_Defensives = 11034,
+
+        [ParentCombo(PLD_ST_Advanced_Defensives)]
+        [CustomComboInfo("Strict Priority Mode", "Restrict cooldown usage by priority, higher priority cooldowns must be on cooldown or inactive before using lower priority cooldowns.", PLD.JobID)]
+        PLD_ST_Advanced_Defensives_StrictMode = 11035,
+
+        [ParentCombo(PLD_AoE_Advanced_Defensives)]
+        [CustomComboInfo("Strict Priority Mode", "Restrict cooldown usage by priority, higher priority cooldowns must be on cooldown or inactive before using lower priority cooldowns.", PLD.JobID)]
+        PLD_AoE_Advanced_Defensives_StrictMode = 11036,
+
         //// Last value = 11032
 
         #endregion
@@ -3503,6 +3519,14 @@ namespace XIVSlothCombo.Combos
         [ParentCombo(WAR_AoE_Overpower)]
         [CustomComboInfo("Defensive Cooldowns Option", "Use defensive cooldowns from the selection below. Where multiple cooldowns meet the HP requirement, it will prioritise from lowest to highest on the priority setting.", WAR.JobID)]
         WAR_AoE_Overpower_Defensives = 18030,
+
+        [ParentCombo(WAR_ST_StormsPath_Defensives)]
+        [CustomComboInfo("Strict Priority Mode", "Restrict cooldown usage by priority, higher priority cooldowns must be on cooldown or inactive before using lower priority cooldowns.", WAR.JobID)]
+        WAR_ST_Advanced_Defensives_StrictMode = 18031,
+
+        [ParentCombo(WAR_AoE_Overpower_Defensives)]
+        [CustomComboInfo("Strict Priority Mode", "Restrict cooldown usage by priority, higher priority cooldowns must be on cooldown or inactive before using lower priority cooldowns.", WAR.JobID)]
+        WAR_AoE_Advanced_Defensives_StrictMode = 18032,
 
         // Last value = 18028
 

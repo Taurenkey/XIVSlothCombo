@@ -1,6 +1,8 @@
 ﻿using Dalamud.Game.ClientState.JobGauge.Types;
 using Dalamud.Game.ClientState.Statuses;
+using Dalamud.Logging;
 using System.Linq;
+using XIVSlothCombo.Combos.JobHelpers;
 using XIVSlothCombo.Combos.PvE.Content;
 using XIVSlothCombo.CustomComboNS;
 using XIVSlothCombo.CustomComboNS.Functions;
@@ -71,9 +73,30 @@ namespace XIVSlothCombo.Combos.PvE
                 PLD_SpiritsWithinOption = new("PLD_SpiritsWithinOption"),
                 PLD_SheltronOption = new("PLD_SheltronOption"),
                 PLD_ST_RequiescatWeave = new("PLD_ST_RequiescatWeave"),
-                PLD_AoE_RequiescatWeave = new("PLD_AoE_RequiescatWeave");
+                PLD_AoE_RequiescatWeave = new("PLD_AoE_RequiescatWeave"),
+                PLD_Adv_Cooldowns_Rampart = new("PLD_Adv_Cooldowns_Rampart"),
+                PLD_Adv_Cooldowns_ArmsLength = new("PLD_Adv_Cooldowns_ArmsLength"),
+                PLD_Adv_Cooldowns_Reprisal = new("PLD_Adv_Cooldowns_Reprisal"),
+                PLD_Adv_Cooldowns_Sentinel = new("PLD_Adv_Cooldowns_Sentinel"),
+                PLD_Adv_Cooldowns_Bulwark = new("PLD_Adv_Cooldowns_Bulwark"),
+                PLD_Adv_Cooldowns_DivineVeil = new("PLD_Adv_Cooldowns_DivineVeil"),
+                PLD_AoE_Adv_Cooldowns_Rampart = new("PLD_AoE_Adv_Cooldowns_Rampart"),
+                PLD_AoE_Adv_Cooldowns_ArmsLength = new("PLD_AoE_Adv_Cooldowns_ArmsLength"),
+                PLD_AoE_Adv_Cooldowns_Reprisal = new("PLD_AoE_Adv_Cooldowns_Reprisal"),
+                PLD_AoE_Adv_Cooldowns_Sentinel = new("PLD_AoE_Adv_Cooldowns_Sentinel"),
+                PLD_AoE_Adv_Cooldowns_Bulwark = new("PLD_AoE_Adv_Cooldowns_Bulwark"),
+                PLD_AoE_Adv_Cooldowns_DivineVeil = new("PLD_AoE_Adv_Cooldowns_DivineVeil"),
+                PLD_AoE_Adv_Cooldowns_Hallowed = new("PLD_AoE_Adv_Cooldowns_Hallowed");
             public static UserBool
                 PLD_Intervene_MeleeOnly = new("PLD_Intervene_MeleeOnly");
+
+            public static UserIntArray
+                PLD_Adv_Cooldowns_Priority = new("PLD_Adv_Cooldowns_Priority"),
+                PLD_Adv_AoE_Cooldowns_Priority = new("PLD_Adv_AoE_Cooldowns_Priority");
+
+            public static UserBoolArray
+                PLD_Adv_Cooldowns_Choice = new("PLD_Adv_Cooldowns_Choice"),
+                PLD_AoE_Adv_Cooldowns_Choice = new("PLD_AoE_Adv_Cooldowns_Choice");
         }
 
         internal class PLD_ST_SimpleMode : CustomCombo
@@ -113,6 +136,7 @@ namespace XIVSlothCombo.Combos.PvE
                                 IsOffCooldown(Variant.VariantUltimatum))
                                 return Variant.VariantUltimatum;
                         }
+
 
                         // Requiescat inside burst (checking for FoF buff causes a late weave and can misalign over long fights with some ping)
                         if (CanWeave(actionID) && WasLastAbility(FightOrFlight) && ActionReady(Requiescat))
@@ -338,6 +362,37 @@ namespace XIVSlothCombo.Combos.PvE
                                 !HasEffect(Buffs.HolySheltron) &&
                                 Gauge.OathGauge >= Config.PLD_SheltronOption)
                                 return OriginalHook(Sheltron);
+
+                            if (IsEnabled(CustomComboPreset.PLD_ST_Advanced_Defensives) && CanWeave(actionID) && !Defensives.HasCooldownBuff() && !Defensives.JustUsedCooldown())
+                            {
+                                foreach (var prio in Config.PLD_Adv_Cooldowns_Priority.Items.OrderBy(x => x))
+                                {
+                                    var index = Config.PLD_Adv_Cooldowns_Priority.IndexOf(prio);
+                                    var isEnabled = Config.PLD_Adv_Cooldowns_Choice[index];
+                                    if (!isEnabled) continue;
+
+                                    int health = Defensives.GetMatchingConfig(index, true, out uint action);
+
+                                    if (IsEnabled(CustomComboPreset.PLD_ST_Advanced_Defensives_StrictMode))
+                                    {
+                                        if (!LevelChecked(action)) continue;
+                                        if (IsOffCooldown(action))
+                                        {
+                                            if (PlayerHealthPercentageHp() <= health)
+                                                return action;
+
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                            return action;
+                                    }
+
+
+                                }
+                            }
                         }
 
                         // Requiescat inside burst (checking for FoF buff causes a late weave and can misalign over long fights with some ping)
@@ -506,6 +561,34 @@ namespace XIVSlothCombo.Combos.PvE
                             Sheltron.LevelChecked() && !HasEffect(Buffs.Sheltron) && !HasEffect(Buffs.HolySheltron) &&
                             Gauge.OathGauge >= Config.PLD_SheltronOption)
                             return OriginalHook(Sheltron);
+
+                        if (IsEnabled(CustomComboPreset.PLD_AoE_Advanced_Defensives) && CanWeave(actionID) && !Defensives.HasCooldownBuff() && !Defensives.JustUsedCooldown())
+                        {
+                            foreach (var prio in Config.PLD_Adv_AoE_Cooldowns_Priority.Items.OrderBy(x => x))
+                            {
+                                var index = Config.PLD_Adv_AoE_Cooldowns_Priority.IndexOf(prio);
+                                var isEnabled = Config.PLD_AoE_Adv_Cooldowns_Choice[index];
+                                if (!isEnabled) continue;
+                                int health = Defensives.GetMatchingConfig(index, true, out uint action);
+
+                                if (IsEnabled(CustomComboPreset.PLD_AoE_Advanced_Defensives_StrictMode))
+                                {
+                                    if (!LevelChecked(action)) continue;
+                                    if (IsOffCooldown(action))
+                                    {
+                                        if (PlayerHealthPercentageHp() <= health)
+                                            return action;
+
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                        return action;
+                                }
+                            }
+                        }
                     }
 
                     // Requiescat inside burst (checking for FoF buff causes a late weave and can misalign over long fights with some ping)

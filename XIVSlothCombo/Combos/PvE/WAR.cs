@@ -132,8 +132,24 @@ namespace XIVSlothCombo.Combos.PvE
                             if (!isEnabled) continue;
 
                             int health = Defensives.GetMatchingConfig(index, true, out uint action);
-                            if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
-                                return action;
+
+                            if (IsEnabled(CustomComboPreset.WAR_ST_Advanced_Defensives_StrictMode))
+                            {
+                                if (!LevelChecked(action)) continue;
+                                if (IsOffCooldown(action))
+                                {
+                                    if (PlayerHealthPercentageHp() <= health)
+                                        return action;
+
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                    return action;
+                            }
+
                         }
                     }
 
@@ -259,8 +275,23 @@ namespace XIVSlothCombo.Combos.PvE
                             if (!isEnabled) continue;
 
                             int health = Defensives.GetMatchingConfig(index, false, out uint action);
-                            if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
-                                return action;
+
+                            if (IsEnabled(CustomComboPreset.WAR_AoE_Advanced_Defensives_StrictMode))
+                            {
+                                if (!LevelChecked(action)) continue;
+                                if (IsOffCooldown(action))
+                                {
+                                    if (PlayerHealthPercentageHp() <= health)
+                                        return action;
+
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (ActionReady(action) && PlayerHealthPercentageHp() <= health)
+                                    return action;
+                            }
                         }
                     }
 
