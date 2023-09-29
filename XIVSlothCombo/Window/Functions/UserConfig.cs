@@ -1744,8 +1744,8 @@ namespace XIVSlothCombo.Window.Functions
                 if (PLD.Config.PLD_Adv_Cooldowns_Choice[5])
                 {
                     ImGui.Indent();
-                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_DivineVeil, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} - HP% to be at or under.");
-                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.Bulwark)} Priority: ");
+                    UserConfig.DrawSliderInt(1, 100, PLD.Config.PLD_Adv_Cooldowns_DivineVeil, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)} - HP% to be at or under.");
+                    UserConfig.DrawPriorityInput(PLD.Config.PLD_Adv_Cooldowns_Priority, 6, 5, $"{ActionWatching.GetActionName(Combos.JobHelpers.Defensives.PLDActions.DivineVeil)} Priority: ");
                     ImGui.Unindent();
                 }
             }

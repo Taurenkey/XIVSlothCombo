@@ -21,7 +21,7 @@ namespace XIVSlothCombo.Services
     /// <summary> Dalamud and plugin services. </summary>
     internal class Service
     {
-        /// <summary> Gets or sets the plugin address resolver. </summary>
+        /// <inheritdoc/>
         internal static PluginAddressResolver Address { get; set; } = null!;
 
         /// <summary> Gets the Dalamud buddy list. </summary>

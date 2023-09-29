@@ -253,6 +253,19 @@ namespace XIVSlothCombo.Data
             };
         }
 
+        public static ActionType GetAttackTypeInternal(uint id)
+        {
+            if (!ActionSheet.TryGetValue(id, out var action)) return FFXIVClientStructs.FFXIV.Client.Game.ActionType.None;
+
+            return action.ActionCategory.Row switch
+            {
+                2 => FFXIVClientStructs.FFXIV.Client.Game.ActionType.Spell,
+                3 => FFXIVClientStructs.FFXIV.Client.Game.ActionType.Spell,
+                4 => FFXIVClientStructs.FFXIV.Client.Game.ActionType.Ability,
+                _ => FFXIVClientStructs.FFXIV.Client.Game.ActionType.None
+            };
+        }
+
         public enum ActionAttackType
         {
             Ability,

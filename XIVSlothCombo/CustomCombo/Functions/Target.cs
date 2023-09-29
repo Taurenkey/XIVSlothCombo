@@ -4,9 +4,17 @@ using System.Numerics;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
+using ECommons.DalamudServices;
 using XIVSlothCombo.Data;
 using XIVSlothCombo.Services;
 using StructsObject = FFXIVClientStructs.FFXIV.Client.Game.Object;
+using static ECommons.GenericHelpers;
+using ECommons;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using BattleChara = Dalamud.Game.ClientState.Objects.Types.BattleChara;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace XIVSlothCombo.CustomComboNS.Functions
 {
@@ -378,5 +386,29 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         internal unsafe static bool OutOfRange(uint actionID, GameObject target) => ActionWatching.OutOfRange(actionID, (StructsObject.GameObject*)Service.ClientState.LocalPlayer.Address, (StructsObject.GameObject*)target.Address);
 
+        public unsafe static int NumberOfEnemiesInCombat()
+        {
+            if (TryGetAddonByName<AddonEnemyList>("_EnemyList", out var list))
+            {
+                var numArray = Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder
+                    .NumberArrays[21];
+
+                int count = 0;
+                for (int i = 0; i < list->EnemyCount; i++)
+                {
+                    var enemyObjectId = numArray->IntArray[8 + i * 6];
+
+                    var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(enemyObjectId);
+
+                    if (enemyChara is null) continue;
+
+                    if (ActionManager.CanUseActionOnTarget(7, &enemyChara->Character.GameObject))
+                        count++;
+                }
+
+                return count;
+            }
+            return 0;
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using System.Linq;
 using XIVSlothCombo.Data;
 using XIVSlothCombo.Services;
 
@@ -79,11 +80,10 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// <returns></returns>
         public static int GetTraitLevel(uint id) => ActionWatching.GetTraitLevel(id);
 
-        /// <summary> Checks if the player can use an action based on the level required and off cooldown / has charges.</summary>
+        /// <summary> Get Action Status == 0? It's ready fam.</summary>
         /// <param name="id"> ID of the action. </param>
         /// <returns></returns>
-        //Note: Testing so far shows non charge skills have a max charge of 1, and it's zero during cooldown
-        public static bool ActionReady(uint id) => LevelChecked(id) && HasCharges(id);
+        public unsafe static bool ActionReady(uint id) => ActionWatching.GetAttackType(id) == ActionWatching.ActionAttackType.Ability ? LevelChecked(id) && IsOffCooldown(id) : LevelChecked(id);
 
         /// <summary> Checks if the last action performed was the passed ID. </summary>
         /// <param name="id"> ID of the action. </param>

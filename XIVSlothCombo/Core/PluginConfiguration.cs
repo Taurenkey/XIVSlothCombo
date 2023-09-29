@@ -10,6 +10,7 @@ using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Services;
 using XIVSlothCombo.Extensions;
 using System.Numerics;
+using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 
 namespace XIVSlothCombo.Core
 {
@@ -344,5 +345,7 @@ namespace XIVSlothCombo.Core
         public void Save() => Service.Interface.SavePluginConfig(this);
 
         #endregion
+
+        public bool AutoHealer { get; set; } = false;
     }
 }

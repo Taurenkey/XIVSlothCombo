@@ -1,15 +1,18 @@
-﻿using System.Linq;
-using System.Numerics;
-using Dalamud.Game.ClientState.Objects.SubKinds;
+﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.ClientState.Statuses;
+using Dalamud.Logging;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
+using System;
 using XIVSlothCombo.Combos;
 using XIVSlothCombo.Combos.JobHelpers;
 using XIVSlothCombo.CustomComboNS;
 using XIVSlothCombo.CustomComboNS.Functions;
 using XIVSlothCombo.Data;
+using XIVSlothCombo.Extensions;
 using XIVSlothCombo.Services;
+using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 #if DEBUG
 namespace XIVSlothCombo.Window.Tabs
@@ -17,7 +20,7 @@ namespace XIVSlothCombo.Window.Tabs
 
     internal class Debug : ConfigWindow
     {
-
+        internal static int debugID;
         internal class DebugCombo : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; }
@@ -25,7 +28,7 @@ namespace XIVSlothCombo.Window.Tabs
             protected override uint Invoke(uint actionID, uint lastComboActionID, float comboTime, byte level) => actionID;
         }
 
-        internal static new void Draw()
+        internal unsafe static new void Draw()
         {
             PlayerCharacter? LocalPlayer = Service.ClientState.LocalPlayer;
             DebugCombo? comboClass = new();
@@ -63,6 +66,19 @@ namespace XIVSlothCombo.Window.Tabs
                 ImGui.TextUnformatted($"Has Just Used Defensive?: {Defensives.JustUsedCooldown()}");
                 ImGui.TextUnformatted($"Number of Cooldowns?: {Defensives.NumberOfCooldownsActive()}");
 
+                ImGui.InputInt($"Action ID", ref debugID);
+
+                if (ImGui.Button($"Test Action"))
+                {
+                    var adjAct = ActionManager.Instance()->GetAdjustedActionId((uint)debugID);
+                    var acttype = ActionWatching.GetAttackTypeInternal(adjAct);
+
+                    PluginLog.Debug($"Using {ActionWatching.GetActionName(adjAct)}");
+
+                    ActionManager.Instance()->UseAction(ActionType.Spell, adjAct, Svc.ClientState.LocalPlayer.ObjectId, 0, 1);
+                }
+
+                ImGui.Text($"Cast Time: {Math.Round(LocalPlayer.RemainingCastTime(), 2)}");
             }
 
             else

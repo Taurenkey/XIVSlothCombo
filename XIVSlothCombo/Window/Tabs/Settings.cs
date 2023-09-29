@@ -164,6 +164,13 @@ namespace XIVSlothCombo.Window.Tabs
 
             #endregion
 
+            bool autoHealer = Service.Configuration.AutoHealer;
+            if (ImGui.Checkbox($"Auto-Healer", ref autoHealer))
+            {
+                Service.Configuration.AutoHealer = autoHealer;
+                Service.Configuration.Save();
+            }
+
             ImGui.EndChild();
         }
     }

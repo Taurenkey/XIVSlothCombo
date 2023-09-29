@@ -430,6 +430,9 @@ namespace XIVSlothCombo.Combos.PvE
                         CanSpellWeave(actionID) &&
                         !(healTarget as BattleChara)!.HasShield())
                         return CelestialIntersection;
+
+                    if (!LevelChecked(Benefic2))
+                        return Benefic;
                 }
                 return actionID;
             }

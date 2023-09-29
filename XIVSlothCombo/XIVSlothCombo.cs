@@ -1,10 +1,15 @@
 using Dalamud.Game;
-using Dalamud.Game.ClientState.Statuses;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin;
+using ECommons;
+using ECommons.DalamudServices;
+using ECommons.GameFunctions;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,10 +21,12 @@ using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Combos.PvP;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.Data;
+using XIVSlothCombo.Extensions;
 using XIVSlothCombo.Services;
 using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
-using ECommons;
+using static XIVSlothCombo.CustomComboNS.Functions.CustomComboFunctions;
+using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace XIVSlothCombo
 {
@@ -29,7 +36,7 @@ namespace XIVSlothCombo
         private const string Command = "/scombo";
 
         private readonly ConfigWindow configWindow;
-        
+
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
 
@@ -81,14 +88,140 @@ namespace XIVSlothCombo
             if (Service.ClientState.IsLoggedIn) ResetFeatures();
 
             Service.Framework.Update += CheckCurrentJob;
+            Svc.Framework.Update += AutomaticPlay;
 
             KillRedundantIDs();
+        }
+
+        private unsafe void AutomaticPlay(Framework framework)
+        {
+            if (!Svc.Party.Any() && !Svc.Buddies.Any()) return;
+
+            if (Service.Configuration.AutoHealer)
+            {
+                if (LocalPlayer?.RemainingCastTime() >= 0.5f) return;
+
+                if (JobIDs.Healer.Contains((byte)JobID!))
+                {
+                    List<BattleChara> party = Svc.Party.Any() ? Svc.Party.Select(x => x.GameObject).Cast<BattleChara>().ToList() : Svc.Buddies.Select(x => x.GameObject).Cast<BattleChara>().ToList();
+                    if (!party.Any(x => x.ObjectId == Svc.ClientState.LocalPlayer.ObjectId))
+                        party.Add(Svc.ClientState.LocalPlayer!);
+
+                    var lowestHealth = party.Where(x => !x.IsDead).Min(x => (double)x.CurrentHp / x.MaxHp);
+                    var lowestHealthTarget = party.Where(x => !x.IsDead).MinBy(x => (double)x.CurrentHp / x.MaxHp).ObjectId;
+
+                    if (JobID == AST.JobID)
+                    {
+                        var averagePartyHealth = party.Where(x => ActionManager.GetActionRange(ActionManager.Instance()->GetAdjustedActionId(AST.AspectedHelios)) <= x.YalmDistanceX && !x.IsDead).Average(x => (double)x.CurrentHp / x.MaxHp);
+
+                        if (InCombat() || Svc.Objects.Any(x => x.SubKind == (byte)BattleNpcSubKind.Enemy && x.TargetObject != null))
+                        {
+                            if (party.Any(x => x.IsDead && x.IsTargetable) && HasEffect(All.Buffs.Swiftcast))
+                            {
+                                foreach (var job in JobIDs.Tank)
+                                {
+                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
+                                    {
+                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
+                                        return;
+                                    }
+
+                                }
+
+                                foreach (var job in JobIDs.Healer)
+                                {
+                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
+                                    {
+                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
+                                        return;
+                                    }
+
+                                }
+
+                                foreach (var job in JobIDs.Ranged)
+                                {
+                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
+                                    {
+                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
+                                        return;
+                                    }
+
+                                }
+
+                                foreach (var job in JobIDs.Melee)
+                                {
+                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
+                                    {
+                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
+                                        return;
+                                    }
+
+                                }
+
+                            }
+
+                            if (lowestHealth <= 0.6f)
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Benefic2);
+                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
+                                ActionManager.Instance()->UseAction(ActionType.Spell, ActionManager.Instance()->GetAdjustedActionId(AST.Benefic2), lowestHealthTarget);
+                                return;
+                            }
+
+                            if (averagePartyHealth <= 0.7f)
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.AspectedHelios);
+                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.AspectedHelios);
+                                return;
+                            }
+
+                            //if (party.Any(x => x.IsDead && x.IsTargetable) && IsOffCooldown(All.Swiftcast))
+                            //{
+                            //    ActionManager.Instance()->UseAction(ActionType.Spell, All.Swiftcast);
+                            //    return;
+                            //}
+
+
+                            if (NumberOfEnemiesInCombat() >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(AST.Combust)))
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Gravity);
+                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.Gravity);
+                            }
+                            else
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Combust);
+                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    return;
+                                if (!LevelChecked(spell)) return;
+
+                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.Combust);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private static void CheckCurrentJob(Framework framework)
         {
             JobID = Service.ClientState.LocalPlayer?.ClassJob?.Id;
         }
+
         private static void KillRedundantIDs()
         {
             List<int> redundantIDs = Service.Configuration.EnabledActions.Where(x => int.TryParse(x.ToString(), out _)).OrderBy(x => x).Cast<int>().ToList();
@@ -158,6 +291,8 @@ namespace XIVSlothCombo
         {
             configWindow?.Dispose();
 
+            Service.Framework.Update -= CheckCurrentJob;
+            Svc.Framework.Update -= AutomaticPlay;
             Service.CommandManager.RemoveHandler(Command);
 
             Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;

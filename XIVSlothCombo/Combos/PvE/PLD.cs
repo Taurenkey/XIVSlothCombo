@@ -569,7 +569,7 @@ namespace XIVSlothCombo.Combos.PvE
                                 var index = Config.PLD_Adv_AoE_Cooldowns_Priority.IndexOf(prio);
                                 var isEnabled = Config.PLD_AoE_Adv_Cooldowns_Choice[index];
                                 if (!isEnabled) continue;
-                                int health = Defensives.GetMatchingConfig(index, true, out uint action);
+                                int health = Defensives.GetMatchingConfig(index, false, out uint action);
 
                                 if (IsEnabled(CustomComboPreset.PLD_AoE_Advanced_Defensives_StrictMode))
                                 {
@@ -600,6 +600,25 @@ namespace XIVSlothCombo.Combos.PvE
                             return Requiescat;
                     }
 
+                    if (HasEffect(Buffs.Requiescat))
+                    {
+                        // Confiteor & Blades
+                        if ((IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_Confiteor) &&
+                            HasEffect(Buffs.ConfiteorReady))
+                            ||
+                            (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_Blades) &&
+                            BladeOfFaith.LevelChecked() &&
+                            OriginalHook(Confiteor) != Confiteor &&
+                            GetResourceCost(OriginalHook(Confiteor)) <= LocalPlayer.CurrentMp))
+                            return OriginalHook(Confiteor);
+
+                        // HC when Confiteor not unlocked
+                        if (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_HolyCircle) &&
+                            GetResourceCost(HolyCircle) <= LocalPlayer.CurrentMp && LevelChecked(HolyCircle))
+                            return HolyCircle;
+
+                    }
+
                     // Actions under FoF burst
                     if (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_FoF) && HasEffect(Buffs.FightOrFlight))
                     {
@@ -612,25 +631,6 @@ namespace XIVSlothCombo.Combos.PvE
                             if (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_SpiritsWithin) &&
                                 ActionReady(OriginalHook(SpiritsWithin)))
                                 return OriginalHook(SpiritsWithin);
-                        }
-
-                        if (HasEffect(Buffs.Requiescat))
-                        {
-                            // Confiteor & Blades
-                            if ((IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_Confiteor) &&
-                                HasEffect(Buffs.ConfiteorReady))
-                                ||
-                                (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_Blades) &&
-                                BladeOfFaith.LevelChecked() &&
-                                OriginalHook(Confiteor) != Confiteor &&
-                                GetResourceCost(OriginalHook(Confiteor)) <= LocalPlayer.CurrentMp))
-                                return OriginalHook(Confiteor);
-
-                            // HC when Confiteor not unlocked
-                            if (IsEnabled(CustomComboPreset.PLD_AoE_AdvancedMode_HolyCircle) &&
-                                GetResourceCost(HolyCircle) <= LocalPlayer.CurrentMp && LevelChecked(HolyCircle))
-                                return HolyCircle;
-
                         }
 
                         // HC under DM/Req
