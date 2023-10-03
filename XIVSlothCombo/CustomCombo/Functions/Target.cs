@@ -130,8 +130,8 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         public static unsafe GameObject? GetHealTarget(bool checkMOPartyUI = false, bool restrictToMouseover = false)
         {
             GameObject? healTarget = null;
-            TargetManager tm = Service.TargetManager;
-
+            ITargetManager tm = Service.TargetManager;
+            
             if (HasFriendlyTarget(tm.SoftTarget)) healTarget = tm.SoftTarget;
             if (healTarget is null && HasFriendlyTarget(CurrentTarget) && !restrictToMouseover) healTarget = CurrentTarget;
             //if (checkMO && HasFriendlyTarget(tm.MouseOverTarget)) healTarget = tm.MouseOverTarget;
@@ -397,7 +397,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
             var enemies = Svc.Objects.Where(x => x.ObjectKind == ObjectKind.BattleNpc).Cast<BattleNpc>().Where(x => x.BattleNpcKind is BattleNpcSubKind.Enemy or BattleNpcSubKind.BattleNpcPart).ToList();
             foreach (var enemy in enemies)
             {
-                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)enemy.ObjectId);
+                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(enemy.ObjectId);
                 if (enemyChara->Character.InCombat)
                 {
                     if (!enemyChara->Character.GameObject.GetIsTargetable()) continue;
@@ -423,7 +423,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
             {
                 var enemyObjectId = enemies[i].ObjectId;
 
-                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)enemyObjectId);
+                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(enemyObjectId);
 
                 if (enemyChara is null || !enemyChara->Character.InCombat || enemyChara->Character.IsFriend) continue;
 
@@ -441,7 +441,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
                             for (int t = 0; t < enemies.Count(); t++)
                             {
                                 var nearbyEnemy = enemies[t].ObjectId;
-                                var nearbyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)nearbyEnemy);
+                                var nearbyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(nearbyEnemy);
                                 if (nearbyChara is null) continue;
                                 if (Svc.Objects.FindFirst(x => x.ObjectId == enemyObjectId, out var tar))
                                 {

@@ -24,6 +24,8 @@ using XIVSlothCombo.Data;
 using XIVSlothCombo.Services;
 using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
+using ECommons;
+using Dalamud.Plugin.Services;
 using static XIVSlothCombo.CustomComboNS.Functions.CustomComboFunctions;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
@@ -35,7 +37,8 @@ namespace XIVSlothCombo
         private const string Command = "/scombo";
 
         private readonly ConfigWindow configWindow;
-
+        private HttpClient httpClient = new();
+        
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
 
@@ -62,7 +65,7 @@ namespace XIVSlothCombo
 
             Service.Configuration = pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
             Service.Address = new PluginAddressResolver();
-            Service.Address.Setup();
+            Service.Address.Setup(Service.SigScanner);
 
             if (Service.Configuration.Version == 4)
                 UpgradeConfig4();
@@ -94,7 +97,7 @@ namespace XIVSlothCombo
             KillRedundantIDs();
         }
 
-        private unsafe void AutomaticPlay(Framework framework)
+        private unsafe void AutomaticPlay(IFramework framework)
         {
             if ((!Svc.Party.Any() && !Svc.Buddies.Any()) || Svc.ClientState.LocalPlayer is null) return;
 
@@ -156,10 +159,10 @@ namespace XIVSlothCombo
                                 if ((averagePartyHealth * 100) <= Service.Configuration.AutoHealAoE)
                                 {
                                     var spell = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
                                         return;
 
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
                                         return;
 
                                     if (!LevelChecked(spell)) return;
@@ -167,7 +170,7 @@ namespace XIVSlothCombo
                                     if (LocalPlayer.CastActionId == aoehSpell)
                                         return;
 
-                                    ActionManager.Instance()->UseAction(ActionType.Spell, aoehSpell);
+                                    ActionManager.Instance()->UseAction(ActionType.Action, aoehSpell);
                                     return;
                                 }
 
@@ -175,10 +178,10 @@ namespace XIVSlothCombo
                                 if ((lowestHealth * 100) <= Service.Configuration.AutoHealST)
                                 {
                                     var spell = ActionManager.Instance()->GetAdjustedActionId(sthSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
                                         return;
 
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
                                         return;
 
                                     if (!LevelChecked(spell)) return;
@@ -187,7 +190,7 @@ namespace XIVSlothCombo
                                         return;
 
                                     Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
-                                    ActionManager.Instance()->UseAction(ActionType.Spell, sthSpell, lowestHealthTarget);
+                                    ActionManager.Instance()->UseAction(ActionType.Action, sthSpell, lowestHealthTarget);
                                     return;
                                 }
 
@@ -196,15 +199,15 @@ namespace XIVSlothCombo
                                 if (NumberOfEnemiesInCombat(aoedSpell) >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(aoedSpell)))
                                 {
                                     var spell = ActionManager.Instance()->GetAdjustedActionId(aoedSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
                                         return;
 
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
                                         return;
 
                                     if (!LevelChecked(spell)) return;
 
-                                    ActionManager.Instance()->UseAction(ActionType.Spell, aoedSpell);
+                                    ActionManager.Instance()->UseAction(ActionType.Action, aoedSpell);
                                     return;
                                 }
                                 else
@@ -212,17 +215,17 @@ namespace XIVSlothCombo
                                     //if (LocalPlayer.TargetObject is null) return;
 
                                     var spell = ActionManager.Instance()->GetAdjustedActionId(stdSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
                                         return;
 
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
                                         return;
 
                                     if (!LevelChecked(spell)) return;
 
                                     if (EnemiesInRange(stdSpell))
                                     {
-                                        ActionManager.Instance()->UseAction(ActionType.Spell, stdSpell);
+                                        ActionManager.Instance()->UseAction(ActionType.Action, stdSpell);
                                         return;
                                     }
                                 }
@@ -235,7 +238,7 @@ namespace XIVSlothCombo
             }
         }
 
-        private static void CheckCurrentJob(Framework framework)
+        private static void CheckCurrentJob(IFramework framework)
         {
             JobID = Service.ClientState.LocalPlayer?.ClassJob?.Id;
         }
@@ -265,7 +268,7 @@ namespace XIVSlothCombo
 
         private void DrawUI() => configWindow.Draw();
 
-        private void PrintLoginMessage(object? sender, EventArgs e)
+        private void PrintLoginMessage()
         {
             Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(task => ResetFeatures());
 
@@ -277,7 +280,7 @@ namespace XIVSlothCombo
         {
             try
             {
-                using HttpResponseMessage? motd = Dalamud.Utility.Util.HttpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
+                using HttpResponseMessage? motd = httpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
                 motd.EnsureSuccessStatusCode();
                 string? data = motd.Content.ReadAsStringAsync().Result;
                 List<Payload>? payloads =
@@ -288,7 +291,7 @@ namespace XIVSlothCombo
                     EmphasisItalicPayload.ItalicsOff
                 ];
 
-                Service.ChatGui.PrintChat(new XivChatEntry
+                Service.ChatGui.Print(new XivChatEntry
                 {
                     Message = new SeString(payloads),
                     Type = XivChatType.Echo

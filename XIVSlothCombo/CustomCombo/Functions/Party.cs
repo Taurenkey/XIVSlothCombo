@@ -61,7 +61,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
             foreach (var member in party)
             {
                 if (member is null) continue;
-                var baseChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)member.ObjectId);
+                var baseChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(member.ObjectId);
                 //PluginLog.Debug($"{member.Name} {baseChara->Character.InCombat}");
                 if (baseChara->Character.InCombat) return true;
             }

@@ -75,7 +75,7 @@ namespace XIVSlothCombo.Window.Tabs
 
                     PluginLog.Debug($"Using {ActionWatching.GetActionName(adjAct)}");
 
-                    ActionManager.Instance()->UseAction(ActionType.Spell, adjAct, Svc.ClientState.LocalPlayer.ObjectId, 0, 1);
+                    ActionManager.Instance()->UseAction(ActionType.Action, adjAct, Svc.ClientState.LocalPlayer.ObjectId, 0, 1);
                 }
 
                 ImGui.Text($"Cast Time: {Math.Round(LocalPlayer.RemainingCastTime(), 2)}");
