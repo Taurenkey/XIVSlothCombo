@@ -48,7 +48,7 @@ namespace XIVSlothCombo.Core
             ConflictingCombos = Enum.GetValues<CustomComboPreset>()
                 .ToDictionary(
                     preset => preset,
-                    preset => preset.GetAttribute<ConflictingCombosAttribute>()?.ConflictingPresets ?? Array.Empty<CustomComboPreset>());
+                    preset => preset.GetAttribute<ConflictingCombosAttribute>()?.ConflictingPresets ?? []);
 
             // Parent combos
             ParentCombos = Enum.GetValues<CustomComboPreset>()
@@ -133,13 +133,13 @@ namespace XIVSlothCombo.Core
         /// <summary> Gets an array of conflicting combo presets. </summary>
         /// <param name="preset"> Preset to check. </param>
         /// <returns> The conflicting presets. </returns>
-        public CustomComboPreset[] GetConflicts(CustomComboPreset preset) => ConflictingCombos[preset];
+        public static CustomComboPreset[] GetConflicts(CustomComboPreset preset) => ConflictingCombos[preset];
 
         /// <summary> Gets the full list of conflicted combos. </summary>
-        public List<CustomComboPreset> GetAllConflicts() => ConflictingCombos.Keys.ToList();
+        public static List<CustomComboPreset> GetAllConflicts() => ConflictingCombos.Keys.ToList();
 
         /// <summary> Get all the info from conflicted combos. </summary>
-        public List<CustomComboPreset[]> GetAllConflictOriginals() => ConflictingCombos.Values.ToList();
+        public static List<CustomComboPreset[]> GetAllConflictOriginals() => ConflictingCombos.Values.ToList();
 
         #endregion
 
@@ -194,10 +194,10 @@ namespace XIVSlothCombo.Core
         /// <summary> Gets a custom integer array value. </summary>
         public static int[] GetCustomIntArrayValue(string config)
         {
-            if (!CustomIntArrayValues.TryGetValue(config, out int[] configValue))
+            if (!CustomIntArrayValues.TryGetValue(config, out int[]? configValue))
             {
-                SetCustomIntArrayValue(config, Array.Empty<int>());
-                return Array.Empty<int>();
+                SetCustomIntArrayValue(config, []);
+                return [];
             }
 
             return configValue;
@@ -240,8 +240,8 @@ namespace XIVSlothCombo.Core
         {
             if (!CustomBoolArrayValues.TryGetValue(config, out bool[]? configValue))
             {
-                SetCustomBoolArrayValue(config, Array.Empty<bool>());
-                return Array.Empty<bool>();
+                SetCustomBoolArrayValue(config, []);
+                return [];
             }
 
             return configValue;
@@ -258,13 +258,13 @@ namespace XIVSlothCombo.Core
         public List<uint> ActiveBLUSpells { get; set; } = new List<uint>();
 
         /// <summary> Gets or sets an array of 4 ability IDs to interact with the <see cref="CustomComboPreset.DNC_DanceComboReplacer"/> combo. </summary>
-        public uint[] DancerDanceCompatActionIDs { get; set; } = new uint[]
-        {
+        public uint[] DancerDanceCompatActionIDs { get; set; } =
+        [
             DNC.Cascade,
             DNC.Flourish,
             DNC.FanDance1,
             DNC.FanDance2,
-        };
+        ];
 
         #endregion
 
@@ -273,14 +273,14 @@ namespace XIVSlothCombo.Core
         [JsonProperty]
         private static Dictionary<string, bool> ResetFeatureCatalog { get; set; } = new Dictionary<string, bool>();
 
-        private bool GetResetValues(string config)
+        private static bool GetResetValues(string config)
         {
             if (ResetFeatureCatalog.TryGetValue(config, out var value)) return value;
 
             return false;
         }
 
-        private void SetResetValues(string config, bool value)
+        private static void SetResetValues(string config, bool value)
         {
             ResetFeatureCatalog[config] = value;
         }
@@ -347,5 +347,8 @@ namespace XIVSlothCombo.Core
         #endregion
 
         public bool AutoHealer { get; set; } = false;
+
+        public int AutoHealST = 100;
+        public int AutoHealAoE = 100;
     }
 }

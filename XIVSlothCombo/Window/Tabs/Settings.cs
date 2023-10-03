@@ -171,6 +171,12 @@ namespace XIVSlothCombo.Window.Tabs
                 Service.Configuration.Save();
             }
 
+            if (autoHealer)
+            {
+                ImGui.SliderInt("Single Target Heal Health %", ref Service.Configuration.AutoHealST, 1, 100, "%d%%");
+                ImGui.SliderInt("AoE Heal Group Health %", ref Service.Configuration.AutoHealAoE, 1, 100, "%d%%");
+            }
+
             ImGui.EndChild();
         }
     }

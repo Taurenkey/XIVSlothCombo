@@ -173,7 +173,7 @@ namespace XIVSlothCombo.Data
         {
             if (CombatActions.Count < 2) return false;
             var lastAction = CombatActions.Last();
-            var secondLastAction = CombatActions[CombatActions.Count - 2];
+            var secondLastAction = CombatActions[^2];
 
             return (GetAttackType(lastAction) == GetAttackType(secondLastAction) && GetAttackType(lastAction) == ActionAttackType.Ability);
         }

@@ -40,7 +40,7 @@ namespace XIVSlothCombo.Combos.JobHelpers
 
         public static bool LevelChecked => CustomComboFunctions.LocalPlayer.Level >= OpenerLevel;
 
-        private bool CanOpener => HasCooldowns() && LevelChecked;
+        private static bool CanOpener => HasCooldowns() && LevelChecked;
 
         private OpenerState currentState = OpenerState.OpenerFinished;
 

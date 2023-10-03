@@ -174,7 +174,7 @@ namespace XIVSlothCombo.Combos.PvE
             {
                 if (actionID is FinalSting)
                 {
-                    if (IsEnabled(CustomComboPreset.BLU_SoloMode) && HasCondition(ConditionFlag.BoundByDuty) && !HasEffect(Buffs.BasicInstinct) && GetPartyMembers().Length == 0 && IsSpellActive(BasicInstinct))
+                    if (IsEnabled(CustomComboPreset.BLU_SoloMode) && HasCondition(ConditionFlag.BoundByDuty) && !HasEffect(Buffs.BasicInstinct) && GetPartyMembers().Count == 0 && IsSpellActive(BasicInstinct))
                         return BasicInstinct;
                     if (!HasEffect(Buffs.Whistle) && IsSpellActive(Whistle) && !WasLastAction(Whistle))
                         return Whistle;
@@ -401,7 +401,6 @@ namespace XIVSlothCombo.Combos.PvE
         internal class BLU_NewMoonFluteOpener : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.BLU_NewMoonFluteOpener;
-            private static bool surpanakhaReady = false;
 
             protected override uint Invoke(uint actionID, uint lastComboActionID, float comboTime, byte level)
             {

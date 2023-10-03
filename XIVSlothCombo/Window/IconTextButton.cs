@@ -19,8 +19,7 @@ namespace XIVSlothCombo.Window
         public static bool IconImageButton(TextureWrap texture, string text, Vector2 size = new(), bool imageOnRight = false, float imageScale = 0)
         {
             var buttonClicked = false;
-
-            var buttonSize = Vector2.Zero;
+            _ = Vector2.Zero;
             var imageSize = new Vector2(texture.Width, texture.Height);
             if (imageScale > 0)
             {
@@ -33,7 +32,7 @@ namespace XIVSlothCombo.Window
 
             var buttonSizeX = imageSize.X + textSize.X + padding.X * 2 + spacing.X;
             var buttonSizeY = (imageSize.Y > textSize.Y ? imageSize.Y : textSize.Y) + padding.Y * 2;
-
+            Vector2 buttonSize;
             if (size == Vector2.Zero)
             {
                 buttonSize = new Vector2(buttonSizeX, buttonSizeY);
@@ -100,8 +99,7 @@ namespace XIVSlothCombo.Window
         public static bool IconTextButton(FontAwesomeIcon icon, string text, Vector2 size = new(), bool iconOnRight = false)
         {
             var buttonClicked = false;
-
-            var buttonSize = Vector2.Zero;
+            _ = Vector2.Zero;
             var iconSize = GetIconSize(icon);
             var textSize = ImGui.CalcTextSize(text);
             var padding = ImGui.GetStyle().FramePadding;
@@ -109,6 +107,7 @@ namespace XIVSlothCombo.Window
 
             var buttonSizeX = iconSize.X + textSize.X + padding.X * 2 + spacing.X;
             var buttonSizeY = (iconSize.Y > textSize.Y ? iconSize.Y : textSize.Y) + padding.Y * 2;
+            Vector2 buttonSize;
             if (size == Vector2.Zero)
             {
                 buttonSize = new Vector2(buttonSizeX, buttonSizeY);

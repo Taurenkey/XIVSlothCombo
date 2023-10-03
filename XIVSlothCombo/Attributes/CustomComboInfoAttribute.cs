@@ -53,7 +53,7 @@ namespace XIVSlothCombo.Attributes
 
         public string JobShorthand => JobIDToShorthand(JobID);
 
-        private string JobIDToShorthand(byte key)
+        private static string JobIDToShorthand(byte key)
         {
             if (ClassJobs.TryGetValue(key, out var job))
             {

@@ -102,7 +102,6 @@ namespace XIVSlothCombo.Combos.PvE
         {
             #region DPS
             public static UserInt
-                SCH_ST_DPS_AltMode = new("SCH_ST_DPS_AltMode"),
                 SCH_ST_DPS_LucidOption = new("SCH_ST_DPS_LucidOption"),
                 SCH_ST_DPS_BioOption = new("SCH_ST_DPS_BioOption"),
                 SCH_ST_DPS_ChainStratagemOption = new("SCH_ST_DPS_ChainStratagemOption");

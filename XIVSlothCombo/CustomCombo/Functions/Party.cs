@@ -1,7 +1,12 @@
-﻿using System.Linq;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.ClientState.Party;
+﻿using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Logging;
+using ECommons.DalamudServices;
+using ECommons.GameFunctions;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using System.Collections.Generic;
+using System.Linq;
 using XIVSlothCombo.Services;
+using BattleChara = Dalamud.Game.ClientState.Objects.Types.BattleChara;
 
 namespace XIVSlothCombo.CustomComboNS.Functions
 {
@@ -12,7 +17,15 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         /// <summary> Gets the party list </summary>
         /// <returns> Current party list. </returns>
-        public static PartyList GetPartyMembers() => Service.PartyList;
+        public static List<BattleChara> GetPartyMembers()
+        {
+            List<BattleChara> party = Svc.Party.Any() ? Svc.Party.Where(x => x.GameObject is not null).Select(x => x.GameObject).Cast<BattleChara>().ToList() : Svc.Buddies.Where(x => x.GameObject is not null).Select(x => x.GameObject).Cast<BattleChara>().ToList();
+
+            if (!party.Any(x => x.ObjectId == Svc.ClientState.LocalPlayer.ObjectId))
+                party.Add(Svc.ClientState.LocalPlayer!);
+
+            return party;
+        }
 
         public unsafe static GameObject? GetPartySlot(int slot)
         {
@@ -40,6 +53,20 @@ namespace XIVSlothCombo.CustomComboNS.Functions
             {
                 return null;
             }
+        }
+
+        public unsafe static bool PartyInCombat()
+        {
+            var party = GetPartyMembers();
+            foreach (var member in party)
+            {
+                if (member is null) continue;
+                var baseChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)member.ObjectId);
+                //PluginLog.Debug($"{member.Name} {baseChara->Character.InCombat}");
+                if (baseChara->Character.InCombat) return true;
+            }
+
+            return false;
         }
     }
 }

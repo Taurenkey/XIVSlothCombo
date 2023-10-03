@@ -2511,6 +2511,12 @@ namespace XIVSlothCombo.Window.Functions
             if (preset == CustomComboPreset.WHM_AoE_DPS_Lucid)
                 UserConfig.DrawSliderInt(4000, 9500, WHM.Config.WHM_AoE_Lucid, "Set value for your MP to be at or under for this feature to work", 150, SliderIncrements.Hundreds);
 
+            if (preset == CustomComboPreset.WHM_AoEHeals_Lucid)
+                UserConfig.DrawSliderInt(4000, 9500, WHM.Config.WHM_AoEHeals_Lucid, "Set value for your MP to be at or under for this feature to work", 150, SliderIncrements.Hundreds);
+
+            if (preset == CustomComboPreset.WHM_STHeals_Lucid)
+                UserConfig.DrawSliderInt(4000, 9500, WHM.Config.WHM_STHeals_Lucid, "Set value for your MP to be at or under for this feature to work", 150, SliderIncrements.Hundreds);
+
             if (preset is CustomComboPreset.WHM_Afflatus)
             {
                 UserConfig.DrawAdditionalBoolChoice(WHM.Config.WHM_Afflatus_Adv, "Advanced Options", "", isConditionalChoice: true);
@@ -2528,8 +2534,20 @@ namespace XIVSlothCombo.Window.Functions
             if (preset == CustomComboPreset.WHM_Afflatus_oGCDHeals)
                 UserConfig.DrawSliderInt(0, 100, WHM.Config.WHM_oGCDHeals, "Set HP% to use Tetragrammaton on target at:");
 
-            if (preset == CustomComboPreset.WHM_Medica_ThinAir)
+            if (preset == CustomComboPreset.WHM_AoeHeals_ThinAir)
                 UserConfig.DrawSliderInt(0, 1, WHM.Config.WHM_Medica_ThinAir, "How many charges to keep ready? (0 = Use all)");
+
+            if (preset == CustomComboPreset.WHM_AoEHeals_Cure3)
+                UserConfig.DrawSliderInt(0, 10000, WHM.Config.WHM_AoE_Cure3MP, "Use when MP is above", sliderIncrement: 100);
+
+            if (preset == CustomComboPreset.WHM_STHeals)
+                UserConfig.DrawAdditionalBoolChoice(WHM.Config.WHM_ST_UIMouseover, "Party UI Mousover Checking", "Check party member's HP & Debuffs by using mouseover on the party list.\n To be used in conjunction with Redirect/Reaction/etc");
+
+            if (preset == CustomComboPreset.WHM_STHeals_Benediction)
+                UserConfig.DrawSliderInt(1, 100, WHM.Config.WHM_Benediction_HP, "Use when target HP% is at or below.");
+
+            if (preset == CustomComboPreset.WHM_STHeals_ThinAir)
+                UserConfig.DrawSliderInt(0, 1, WHM.Config.WHM_ST_ThinAir, "How many charges to keep ready? (0 = Use all)");
 
             #endregion
             // ====================================================================================

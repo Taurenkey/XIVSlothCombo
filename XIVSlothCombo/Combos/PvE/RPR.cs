@@ -97,7 +97,7 @@ namespace XIVSlothCombo.Combos.PvE
                 RPRGauge? gauge = GetJobGauge<RPRGauge>();
                 bool enshrouded = HasEffect(Buffs.Enshrouded);
                 bool soulReaver = HasEffect(Buffs.SoulReaver);
-                bool deathsDesign = TargetHasEffect(Debuffs.DeathsDesign);
+                _ = TargetHasEffect(Debuffs.DeathsDesign);
                 double playerHP = PlayerHealthPercentageHp();
                 double enemyHP = GetTargetHPPercent();
                 int positionalChoice = PluginConfiguration.GetCustomIntValue(Config.RPR_PositionalChoice);

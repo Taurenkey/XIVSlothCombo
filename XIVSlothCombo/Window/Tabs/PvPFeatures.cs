@@ -57,9 +57,9 @@ namespace XIVSlothCombo.Window.Tabs
                 else
                 {
                     i += groupedPresets[jobName].Where(x => PluginConfiguration.IsSecret(x.Preset)).Count();
-                    foreach (var preset in groupedPresets[jobName].Where(x => PluginConfiguration.IsSecret(x.Preset)))
+                    foreach (var (Preset, Info) in groupedPresets[jobName].Where(x => PluginConfiguration.IsSecret(x.Preset)))
                     {
-                        i += Presets.AllChildren(presetChildren[preset.Preset]);
+                        i += Presets.AllChildren(presetChildren[Preset]);
                     }
                 }
             }
@@ -75,8 +75,8 @@ namespace XIVSlothCombo.Window.Tabs
 
                 if (Service.Configuration.HideConflictedCombos)
                 {
-                    var conflictOriginals = Service.Configuration.GetConflicts(preset); // Presets that are contained within a ConflictedAttribute
-                    var conflictsSource = Service.Configuration.GetAllConflicts();      // Presets with the ConflictedAttribute
+                    var conflictOriginals = PluginConfiguration.GetConflicts(preset); // Presets that are contained within a ConflictedAttribute
+                    var conflictsSource = PluginConfiguration.GetAllConflicts();      // Presets with the ConflictedAttribute
 
                     if (!conflictsSource.Where(x => x == preset).Any() || conflictOriginals.Length == 0)
                     {

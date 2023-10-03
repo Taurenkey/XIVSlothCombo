@@ -85,7 +85,7 @@ namespace XIVSlothCombo.Combos.PvE
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.DRG_Jump;
 
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level) => 
-                actionID is DRG.Jump or DRG.HighJump && HasEffect(DRG.Buffs.DiveReady) ? DRG.MirageDive : actionID;
+                actionID is Jump or HighJump && HasEffect(Buffs.DiveReady) ? MirageDive : actionID;
         }
 
         internal class DRG_STCombo : CustomCombo

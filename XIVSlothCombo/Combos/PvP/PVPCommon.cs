@@ -68,7 +68,7 @@ namespace XIVSlothCombo.Combos.PvP
                 return actionID;
             }
 
-            public bool Execute()
+            public static bool Execute()
             {
                 var jobMaxHp = LocalPlayer.MaxHp;
                 var threshold = PluginConfiguration.GetCustomIntValue(Config.EmergencyHealThreshold);
@@ -108,7 +108,7 @@ namespace XIVSlothCombo.Combos.PvP
                 return actionID;
             }
 
-            public bool Execute()
+            public static bool Execute()
             {
                 var jobMaxHp = LocalPlayer.MaxHp;
                 var threshold = PluginConfiguration.GetCustomIntValue(Config.EmergencyGuardThreshold);
@@ -146,7 +146,7 @@ namespace XIVSlothCombo.Combos.PvP
                 return actionID;
             }
 
-            public bool Execute()
+            public static bool Execute()
             {
                 var selectedStatuses = PluginConfiguration.GetCustomBoolArrayValue(Config.QuickPurifyStatuses);
 

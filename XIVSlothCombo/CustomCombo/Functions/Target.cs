@@ -1,20 +1,19 @@
-﻿using System;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
-using ECommons.DalamudServices;
-using XIVSlothCombo.Data;
-using XIVSlothCombo.Services;
-using StructsObject = FFXIVClientStructs.FFXIV.Client.Game.Object;
-using static ECommons.GenericHelpers;
 using ECommons;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using BattleChara = Dalamud.Game.ClientState.Objects.Types.BattleChara;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using System;
+using System.Linq;
+using System.Numerics;
+using XIVSlothCombo.Data;
+using XIVSlothCombo.Extensions;
+using XIVSlothCombo.Services;
+using static ECommons.GenericHelpers;
+using BattleChara = Dalamud.Game.ClientState.Objects.Types.BattleChara;
+using StructsObject = FFXIVClientStructs.FFXIV.Client.Game.Object;
 
 namespace XIVSlothCombo.CustomComboNS.Functions
 {
@@ -29,21 +28,24 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         /// <summary> Gets the distance from the target. </summary>
         /// <returns> Double representing the distance from the target. </returns>
-        public static float GetTargetDistance()
+        public static float GetTargetDistance(GameObject? optionalTarget = null, GameObject? optionalSource = null)
         {
-            if (CurrentTarget is null || LocalPlayer is null)
+            var target = optionalTarget is null ? CurrentTarget : optionalTarget;
+            var source = optionalSource is null ? LocalPlayer : optionalSource;
+
+            if (target is null || source is null)
                 return 0;
 
-            if (CurrentTarget is not BattleChara chara)
+            if (target is not BattleChara chara)
                 return 0;
 
-            if (CurrentTarget.ObjectId == LocalPlayer.ObjectId)
+            if (target.ObjectId == source.ObjectId)
                 return 0;
 
             Vector2 position = new(chara.Position.X, chara.Position.Z);
-            Vector2 selfPosition = new(LocalPlayer.Position.X, LocalPlayer.Position.Z);
+            Vector2 selfPosition = new(source.Position.X, source.Position.Z);
 
-            return Math.Max(0, Vector2.Distance(position, selfPosition) - chara.HitboxRadius - LocalPlayer.HitboxRadius);
+            return Math.Max(0, Vector2.Distance(position, selfPosition) - chara.HitboxRadius - source.HitboxRadius);
         }
 
         /// <summary> Gets a value indicating whether you are in melee range from the current target. </summary>
@@ -102,7 +104,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         public static float PlayerHealthPercentageHp() => (float)LocalPlayer.CurrentHp / LocalPlayer.MaxHp * 100;
 
-        public static bool HasBattleTarget() => (CurrentTarget as BattleNpc)?.BattleNpcKind is BattleNpcSubKind.Enemy or (BattleNpcSubKind)1;
+        public static bool HasBattleTarget() => CurrentTarget is BattleNpc { BattleNpcKind: BattleNpcSubKind.Enemy or BattleNpcSubKind.BattleNpcPart };
 
         public static bool HasFriendlyTarget(GameObject? OurTarget = null)
         {
@@ -129,7 +131,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         {
             GameObject? healTarget = null;
             TargetManager tm = Service.TargetManager;
-            
+
             if (HasFriendlyTarget(tm.SoftTarget)) healTarget = tm.SoftTarget;
             if (healTarget is null && HasFriendlyTarget(CurrentTarget) && !restrictToMouseover) healTarget = CurrentTarget;
             //if (checkMO && HasFriendlyTarget(tm.MouseOverTarget)) healTarget = tm.MouseOverTarget;
@@ -138,7 +140,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
                 StructsObject.GameObject* t = PartyTargetingService.UITarget;
                 if (t != null && t->ObjectID != 0)
                 {
-                    GameObject? uiTarget =  Service.ObjectTable.Where(x => x.ObjectId == t->ObjectID).FirstOrDefault();
+                    GameObject? uiTarget = Service.ObjectTable.Where(x => x.ObjectId == t->ObjectID).FirstOrDefault();
                     if (uiTarget != null && HasFriendlyTarget(uiTarget)) healTarget = uiTarget;
 
                     if (restrictToMouseover)
@@ -277,32 +279,35 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// Get angle to target.
         /// </summary>
         /// <returns>Angle relative to target</returns>
-        public float angleToTarget()
+        public static float AngleToTarget()
         {
             if (CurrentTarget is null || LocalPlayer is null)
-               return 0;
-
-            if (CurrentTarget is not BattleChara chara || CurrentTarget.ObjectKind != Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc)
                 return 0;
-
-            var targetPosition = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
+            if (CurrentTarget is not BattleChara || CurrentTarget.ObjectKind != ObjectKind.BattleNpc)
+                return 0;
+            _ = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
             var angle = PositionalMath.AngleXZ(CurrentTarget.Position, LocalPlayer.Position) - CurrentTarget.Rotation;
 
             var regionDegrees = PositionalMath.Degrees(angle);
-            if(regionDegrees < 0) {
+            if (regionDegrees < 0)
+            {
                 regionDegrees = 360 + regionDegrees;
             }
 
-            if( ( regionDegrees >= 45 ) && ( regionDegrees <= 135 ) ) {
+            if ((regionDegrees >= 45) && (regionDegrees <= 135))
+            {
                 return 1;
             }
-            if( ( regionDegrees >= 135 ) && ( regionDegrees <= 225 ) ) {
+            if ((regionDegrees >= 135) && (regionDegrees <= 225))
+            {
                 return 2;
             }
-            if( ( regionDegrees >= 225 ) && ( regionDegrees <= 315 ) ) {
+            if ((regionDegrees >= 225) && (regionDegrees <= 315))
+            {
                 return 3;
             }
-            if( ( regionDegrees >= 315 ) || ( regionDegrees <= 45 ) ) {
+            if ((regionDegrees >= 315) || (regionDegrees <= 45))
+            {
                 return 4;
             }
             return 0;
@@ -312,25 +317,25 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// Is player on target's rear.
         /// </summary>
         /// <returns>True or false.</returns>
-        public bool OnTargetsRear()
+        public static bool OnTargetsRear()
         {
             if (CurrentTarget is null || LocalPlayer is null)
                 return false;
-
-            if (CurrentTarget is not BattleChara chara || CurrentTarget.ObjectKind != Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc)
+            if (CurrentTarget is not BattleChara || CurrentTarget.ObjectKind != ObjectKind.BattleNpc)
                 return false;
-
-            var targetPosition = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
+            _ = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
             var angle = PositionalMath.AngleXZ(CurrentTarget.Position, LocalPlayer.Position) - CurrentTarget.Rotation;
 
             var regionDegrees = PositionalMath.Degrees(angle);
-            if( regionDegrees < 0 ) {
+            if (regionDegrees < 0)
+            {
                 regionDegrees = 360 + regionDegrees;
             }
 
-            if( ( regionDegrees >= 135 ) && ( regionDegrees <= 225 ) ) {
+            if ((regionDegrees >= 135) && (regionDegrees <= 225))
+            {
                 return true;
-            }            
+            }
             return false;
         }
 
@@ -338,28 +343,29 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// Is player on target's flank.
         /// </summary>
         /// <returns>True or false.</returns>
-        public bool OnTargetsFlank()
+        public static bool OnTargetsFlank()
         {
             if (CurrentTarget is null || LocalPlayer is null)
                 return false;
-
-            if (CurrentTarget is not BattleChara chara || CurrentTarget.ObjectKind != Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc)
+            if (CurrentTarget is not BattleChara || CurrentTarget.ObjectKind != ObjectKind.BattleNpc)
                 return false;
-
-            var targetPosition = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
+            _ = new Vector2(CurrentTarget.Position.X, CurrentTarget.Position.Z);
             var angle = PositionalMath.AngleXZ(CurrentTarget.Position, LocalPlayer.Position) - CurrentTarget.Rotation;
 
             var regionDegrees = PositionalMath.Degrees(angle);
-            if( regionDegrees < 0 ) {
+            if (regionDegrees < 0)
+            {
                 regionDegrees = 360 + regionDegrees;
             }
 
             // left flank
-            if( ( regionDegrees >= 45 ) && ( regionDegrees <= 135 ) ) {
+            if ((regionDegrees >= 45) && (regionDegrees <= 135))
+            {
                 return true;
             }
             // right flank
-            if( ( regionDegrees >= 225 ) && ( regionDegrees <= 315 ) ) {            
+            if ((regionDegrees >= 225) && (regionDegrees <= 315))
+            {
                 return true;
             }
             return false;
@@ -386,28 +392,78 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         internal unsafe static bool OutOfRange(uint actionID, GameObject target) => ActionWatching.OutOfRange(actionID, (StructsObject.GameObject*)Service.ClientState.LocalPlayer.Address, (StructsObject.GameObject*)target.Address);
 
-        public unsafe static int NumberOfEnemiesInCombat()
+        public unsafe static bool EnemiesInRange(uint spellCheck)
         {
-            if (TryGetAddonByName<AddonEnemyList>("_EnemyList", out var list))
+            var enemies = Svc.Objects.Where(x => x.ObjectKind == ObjectKind.BattleNpc).Cast<BattleNpc>().Where(x => x.BattleNpcKind is BattleNpcSubKind.Enemy or BattleNpcSubKind.BattleNpcPart).ToList();
+            foreach (var enemy in enemies)
             {
-                var numArray = Framework.Instance()->GetUiModule()->GetRaptureAtkModule()->AtkModule.AtkArrayDataHolder
-                    .NumberArrays[21];
-
-                int count = 0;
-                for (int i = 0; i < list->EnemyCount; i++)
+                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)enemy.ObjectId);
+                if (enemyChara->Character.InCombat)
                 {
-                    var enemyObjectId = numArray->IntArray[8 + i * 6];
+                    if (!enemyChara->Character.GameObject.GetIsTargetable()) continue;
 
-                    var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(enemyObjectId);
-
-                    if (enemyChara is null) continue;
-
-                    if (ActionManager.CanUseActionOnTarget(7, &enemyChara->Character.GameObject))
-                        count++;
+                    if (!OutOfRange(spellCheck, enemy))
+                        return true;
                 }
 
-                return count;
             }
+
+            return false;
+        }
+
+        public unsafe static int NumberOfEnemiesInCombat(uint aoeSpell)
+        {
+            ActionWatching.ActionSheet.Values.TryGetFirst(x => x.RowId == aoeSpell, out var sheetSpell);
+            bool needsTarget = sheetSpell.CanTargetHostile;
+
+            int count = 0;
+            var enemies = Svc.Objects.Where(x => x.ObjectKind == ObjectKind.BattleNpc).Cast<BattleNpc>().ToList();
+
+            for (int i = 0; i < enemies.Count(); i++)
+            {
+                var enemyObjectId = enemies[i].ObjectId;
+
+                var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)enemyObjectId);
+
+                if (enemyChara is null || !enemyChara->Character.InCombat || enemyChara->Character.IsFriend) continue;
+
+                if (ActionManager.CanUseActionOnTarget(7, &enemyChara->Character.GameObject))
+                {
+                    if (!needsTarget)
+                    {
+                        if (GetTargetDistance(Svc.Objects.First(x => x.ObjectId == enemyObjectId)) <= sheetSpell.EffectRange)
+                            count++;
+                    }
+                    else
+                    {
+                        if (Svc.Targets.Target != null)
+                        {
+                            for (int t = 0; t < enemies.Count(); t++)
+                            {
+                                var nearbyEnemy = enemies[t].ObjectId;
+                                var nearbyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId((int)nearbyEnemy);
+                                if (nearbyChara is null) continue;
+                                if (Svc.Objects.FindFirst(x => x.ObjectId == enemyObjectId, out var tar))
+                                {
+                                    if (tar.IsDead) continue;
+
+                                    if (GetTargetDistance(tar, Svc.Targets.Target) <= sheetSpell.EffectRange)
+                                    {
+                                        count++;
+                                    }
+                                }
+                            }
+
+                            return count;
+                        }
+                    }
+                }
+
+
+            }
+
+            return count;
+
             return 0;
         }
     }

@@ -67,8 +67,8 @@ namespace XIVSlothCombo.Combos.PvP
                     bool raijuLocked = HasEffect(Debuffs.SeakedForkedRaiju);
                     bool meisuiLocked = HasEffect(Debuffs.SealedMeisui);
                     bool hyoshoLocked = HasEffect(Debuffs.SealedHyoshoRanryu);
-                    bool dotonLocked = HasEffect(Debuffs.SealedDoton);
-                    bool gokaLocked = HasEffect(Debuffs.SealedGokaMekkyaku);
+                    _ = HasEffect(Debuffs.SealedDoton);
+                    _ = HasEffect(Debuffs.SealedGokaMekkyaku);
                     bool hutonLocked = HasEffect(Debuffs.SealedHuton);
                     bool mudraMode = HasEffect(Buffs.ThreeMudra);
                     bool canWeave = CanWeave(SpinningEdge);
@@ -128,13 +128,13 @@ namespace XIVSlothCombo.Combos.PvP
                 {
                     var threeMudrasCD = GetCooldown(ThreeMudra);
                     var fumaCD = GetCooldown(FumaShuriken);
-                    var bunshinStacks = HasEffect(Buffs.Bunshin) ? GetBuffStacks(Buffs.Bunshin) : 0;
-                    bool raijuLocked = HasEffect(Debuffs.SeakedForkedRaiju);
+                    _ = HasEffect(Buffs.Bunshin) ? GetBuffStacks(Buffs.Bunshin) : 0;
+                    _ = HasEffect(Debuffs.SeakedForkedRaiju);
                     bool meisuiLocked = HasEffect(Debuffs.SealedMeisui);
-                    bool hyoshoLocked = HasEffect(Debuffs.SealedHyoshoRanryu);
+                    _ = HasEffect(Debuffs.SealedHyoshoRanryu);
                     bool dotonLocked = HasEffect(Debuffs.SealedDoton);
                     bool gokaLocked = HasEffect(Debuffs.SealedGokaMekkyaku);
-                    bool hutonLocked = HasEffect(Debuffs.SealedHuton);
+                    _ = HasEffect(Debuffs.SealedHuton);
                     bool mudraMode = HasEffect(Buffs.ThreeMudra);
                     bool canWeave = CanWeave(SpinningEdge);
                     var jobMaxHp = LocalPlayer.MaxHp;

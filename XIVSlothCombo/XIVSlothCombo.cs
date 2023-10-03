@@ -1,12 +1,12 @@
 using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -21,7 +21,6 @@ using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Combos.PvP;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.Data;
-using XIVSlothCombo.Extensions;
 using XIVSlothCombo.Services;
 using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
@@ -40,6 +39,7 @@ namespace XIVSlothCombo
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
 
+        public TaskManager TM;
         public static uint? JobID
         {
             get => jobID;
@@ -47,7 +47,7 @@ namespace XIVSlothCombo
             {
                 if (jobID != value)
                 {
-                    Dalamud.Logging.PluginLog.Debug($"Switched to job {value}");
+                    PluginLog.Debug($"Switched to job {value}");
                     PvEFeatures.HasToOpenJob = true;
                 }
                 jobID = value;
@@ -73,6 +73,7 @@ namespace XIVSlothCombo
             Combos.JobHelpers.AST.Init();
 
             ECommonsMain.Init(pluginInterface, this);
+            TM = new() { ShowDebug = false };
             configWindow = new ConfigWindow(this);
 
             Service.Interface.UiBuilder.Draw += DrawUI;
@@ -95,125 +96,142 @@ namespace XIVSlothCombo
 
         private unsafe void AutomaticPlay(Framework framework)
         {
-            if (!Svc.Party.Any() && !Svc.Buddies.Any()) return;
+            if ((!Svc.Party.Any() && !Svc.Buddies.Any()) || Svc.ClientState.LocalPlayer is null) return;
 
-            if (Service.Configuration.AutoHealer)
+            if (!TM.IsBusy)
             {
-                if (LocalPlayer?.RemainingCastTime() >= 0.5f) return;
-
-                if (JobIDs.Healer.Contains((byte)JobID!))
+                TM.DelayNext("DelayAuto", 750);
+                TM.Enqueue(() =>
                 {
-                    List<BattleChara> party = Svc.Party.Any() ? Svc.Party.Select(x => x.GameObject).Cast<BattleChara>().ToList() : Svc.Buddies.Select(x => x.GameObject).Cast<BattleChara>().ToList();
-                    if (!party.Any(x => x.ObjectId == Svc.ClientState.LocalPlayer.ObjectId))
-                        party.Add(Svc.ClientState.LocalPlayer!);
+                    var party = GetPartyMembers();
 
-                    var lowestHealth = party.Where(x => !x.IsDead).Min(x => (double)x.CurrentHp / x.MaxHp);
-                    var lowestHealthTarget = party.Where(x => !x.IsDead).MinBy(x => (double)x.CurrentHp / x.MaxHp).ObjectId;
-
-                    if (JobID == AST.JobID)
+                    if (PartyInCombat())
                     {
-                        var averagePartyHealth = party.Where(x => ActionManager.GetActionRange(ActionManager.Instance()->GetAdjustedActionId(AST.AspectedHelios)) <= x.YalmDistanceX && !x.IsDead).Average(x => (double)x.CurrentHp / x.MaxHp);
-
-                        if (InCombat() || Svc.Objects.Any(x => x.SubKind == (byte)BattleNpcSubKind.Enemy && x.TargetObject != null))
+                        if (Service.Configuration.AutoHealer)
                         {
-                            if (party.Any(x => x.IsDead && x.IsTargetable) && HasEffect(All.Buffs.Swiftcast))
+                            if (JobIDs.Healer.Contains((byte)JobID!))
                             {
-                                foreach (var job in JobIDs.Tank)
-                                {
-                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
-                                    {
-                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
-                                        return;
-                                    }
+                                var newTarget = party.Where(x => !x.IsDead && x.GetRole() == CombatRole.DPS).FirstOrDefault()?.TargetObject;
 
+                                var lowestHealth = party.Where(x => !x.IsDead).Min(x => (double)x.CurrentHp / x.MaxHp);
+                                var lowestHealthTarget = party.Where(x => !x.IsDead).MinBy(x => (double)x.CurrentHp / x.MaxHp).ObjectId;
+
+                                uint sthSpell = JobID switch
+                                {
+                                    AST.JobID => AST.Benefic2,
+                                    SCH.JobID => SCH.Physick,
+                                    WHM.JobID => WHM.Cure,
+                                    _ => throw new NotImplementedException()
+                                };
+
+                                uint aoehSpell = JobID switch
+                                {
+                                    AST.JobID => AST.AspectedHelios,
+                                    SCH.JobID => SCH.Succor,
+                                    WHM.JobID => WHM.Medica,
+                                    _ => throw new NotImplementedException(),
+                                };
+
+                                uint stdSpell = JobID switch
+                                {
+                                    AST.JobID => AST.Config.AST_DPS_AltMode == 0 ? AST.Malefic : AST.Combust,
+                                    SCH.JobID => !SCH.Config.SCH_ST_DPS_Adv || SCH.Config.SCH_ST_DPS_Adv_Actions[0] ? SCH.Broil : SCH.Config.SCH_ST_DPS_Adv_Actions[1] ? SCH.Bio : SCH.Ruin2,
+                                    WHM.JobID => WHM.Stone1,
+                                    _ => throw new NotImplementedException()
+                                };
+
+                                uint aoedSpell = JobID switch
+                                {
+                                    AST.JobID => AST.Gravity,
+                                    SCH.JobID => SCH.ArtOfWar,
+                                    WHM.JobID => WHM.Holy,
+                                    _ => throw new NotImplementedException()
+                                };
+
+                                var adjustedAoeH = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
+                                var aoeSpellRange = ActionWatching.ActionSheet.Values.First(x => x.RowId == adjustedAoeH).EffectRange;
+                                var averagePartyHealth = party.Where(x => x.YalmDistanceX <= aoehSpell && !x.IsDead).Average(x => (double)x.CurrentHp / x.MaxHp);
+
+
+                                if ((averagePartyHealth * 100) <= Service.Configuration.AutoHealAoE)
+                                {
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                        return;
+
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                        return;
+
+                                    if (!LevelChecked(spell)) return;
+
+                                    if (LocalPlayer.CastActionId == aoehSpell)
+                                        return;
+
+                                    ActionManager.Instance()->UseAction(ActionType.Spell, aoehSpell);
+                                    return;
                                 }
 
-                                foreach (var job in JobIDs.Healer)
-                                {
-                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
-                                    {
-                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
-                                        return;
-                                    }
 
+                                if ((lowestHealth * 100) <= Service.Configuration.AutoHealST)
+                                {
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(sthSpell);
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                        return;
+
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                        return;
+
+                                    if (!LevelChecked(spell)) return;
+
+                                    if (WasLastAction(sthSpell) || ActionManager.Instance()->QueuedActionId == sthSpell)
+                                        return;
+
+                                    Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
+                                    ActionManager.Instance()->UseAction(ActionType.Spell, sthSpell, lowestHealthTarget);
+                                    return;
                                 }
 
-                                foreach (var job in JobIDs.Ranged)
+                                //if (newTarget != null && !HasBattleTarget()) Svc.Targets.Target = newTarget;
+
+                                if (NumberOfEnemiesInCombat(aoedSpell) >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(aoedSpell)))
                                 {
-                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(aoedSpell);
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                        return;
+
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                        return;
+
+                                    if (!LevelChecked(spell)) return;
+
+                                    ActionManager.Instance()->UseAction(ActionType.Spell, aoedSpell);
+                                    return;
+                                }
+                                else
+                                {
+                                    //if (LocalPlayer.TargetObject is null) return;
+
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(stdSpell);
+                                    if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
+                                        return;
+
+                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Spell, spell) != 0)
+                                        return;
+
+                                    if (!LevelChecked(spell)) return;
+
+                                    if (EnemiesInRange(stdSpell))
                                     {
-                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
+                                        ActionManager.Instance()->UseAction(ActionType.Spell, stdSpell);
                                         return;
                                     }
-
                                 }
 
-                                foreach (var job in JobIDs.Melee)
-                                {
-                                    if (party.FindFirst(x => x.IsDead && x.IsTargetable && x.ClassJob.Id == job, out var deadbitch))
-                                    {
-                                        ActionManager.Instance()->UseAction(ActionType.Spell, AST.Ascend, deadbitch.ObjectId);
-                                        return;
-                                    }
 
-                                }
-
-                            }
-
-                            if (lowestHealth <= 0.6f)
-                            {
-                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Benefic2);
-                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
-                                    return;
-
-                                if (!LevelChecked(spell)) return;
-
-                                Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
-                                ActionManager.Instance()->UseAction(ActionType.Spell, ActionManager.Instance()->GetAdjustedActionId(AST.Benefic2), lowestHealthTarget);
-                                return;
-                            }
-
-                            if (averagePartyHealth <= 0.7f)
-                            {
-                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.AspectedHelios);
-                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
-                                    return;
-
-                                if (!LevelChecked(spell)) return;
-
-                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.AspectedHelios);
-                                return;
-                            }
-
-                            //if (party.Any(x => x.IsDead && x.IsTargetable) && IsOffCooldown(All.Swiftcast))
-                            //{
-                            //    ActionManager.Instance()->UseAction(ActionType.Spell, All.Swiftcast);
-                            //    return;
-                            //}
-
-
-                            if (NumberOfEnemiesInCombat() >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(AST.Combust)))
-                            {
-                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Gravity);
-                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
-                                    return;
-
-                                if (!LevelChecked(spell)) return;
-
-                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.Gravity);
-                            }
-                            else
-                            {
-                                var spell = ActionManager.Instance()->GetAdjustedActionId(AST.Combust);
-                                if (ActionManager.GetAdjustedCastTime(ActionType.Spell, spell) > 0 && IsMoving)
-                                    return;
-                                if (!LevelChecked(spell)) return;
-
-                                ActionManager.Instance()->UseAction(ActionType.Spell, AST.Combust);
                             }
                         }
                     }
-                }
+                });
             }
         }
 
@@ -262,13 +280,13 @@ namespace XIVSlothCombo
                 using HttpResponseMessage? motd = Dalamud.Utility.Util.HttpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
                 motd.EnsureSuccessStatusCode();
                 string? data = motd.Content.ReadAsStringAsync().Result;
-                List<Payload>? payloads = new()
-                {
+                List<Payload>? payloads =
+                [
                     starterMotd,
                     EmphasisItalicPayload.ItalicsOn,
                     new TextPayload(data.Trim()),
                     EmphasisItalicPayload.ItalicsOff
-                };
+                ];
 
                 Service.ChatGui.PrintChat(new XivChatEntry
                 {
@@ -279,7 +297,7 @@ namespace XIVSlothCombo
 
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "Unable to retrieve MotD");
+                PluginLog.Error(ex, "Unable to retrieve MotD");
             }
         }
 
@@ -307,7 +325,7 @@ namespace XIVSlothCombo
             Service.ClientState.Login -= PrintLoginMessage;
         }
 
-        private void DisposeOpeners()
+        private static void DisposeOpeners()
         {
             BLM.BLM_ST_SimpleMode.BLMOpener.Dispose();
             BLM.BLM_ST_AdvancedMode.BLMOpener.Dispose();
@@ -590,10 +608,10 @@ namespace XIVSlothCombo
                                 {
                                     string key = config.Name!;
 
-                                    if (PluginConfiguration.CustomIntValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomIntValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomFloatValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomFloatValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomBoolValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomBoolValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomBoolArrayValues.ContainsKey(key)) { file.WriteLine($"{key} - {string.Join(", ", PluginConfiguration.CustomBoolArrayValues[key])}"); continue; }
+                                    if (PluginConfiguration.CustomIntValues.TryGetValue(key, out int custint)) { file.WriteLine($"{key} - {custint}"); continue; }
+                                    if (PluginConfiguration.CustomFloatValues.TryGetValue(key, out float custfloat)) { file.WriteLine($"{key} - {custfloat}"); continue; }
+                                    if (PluginConfiguration.CustomBoolValues.TryGetValue(key, out bool custbool)) { file.WriteLine($"{key} - {custbool}"); continue; }
+                                    if (PluginConfiguration.CustomBoolArrayValues.TryGetValue(key, out bool[]? custboolarray)) { file.WriteLine($"{key} - {string.Join(", ", custboolarray)}"); continue; }
 
                                     file.WriteLine($"{key} - NOT SET");
                                 }
@@ -602,10 +620,10 @@ namespace XIVSlothCombo
                                 {
                                     string key = config.Name!;
 
-                                    if (PluginConfiguration.CustomIntValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomIntValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomFloatValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomFloatValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomBoolValues.ContainsKey(key)) { file.WriteLine($"{key} - {PluginConfiguration.CustomBoolValues[key]}"); continue; }
-                                    if (PluginConfiguration.CustomBoolArrayValues.ContainsKey(key)) { file.WriteLine($"{key} - {string.Join(", ", PluginConfiguration.CustomBoolArrayValues[key])}"); continue; }
+                                    if (PluginConfiguration.CustomIntValues.TryGetValue(key, out int custint)) { file.WriteLine($"{key} - {custint}"); continue; }
+                                    if (PluginConfiguration.CustomFloatValues.TryGetValue(key, out float custfloat)) { file.WriteLine($"{key} - {custfloat}"); continue; }
+                                    if (PluginConfiguration.CustomBoolValues.TryGetValue(key, out bool custbool)) { file.WriteLine($"{key} - {custbool}"); continue; }
+                                    if (PluginConfiguration.CustomBoolArrayValues.TryGetValue(key, out bool[]? custboolarray)) { file.WriteLine($"{key} - {string.Join(", ", custboolarray)}"); continue; }
 
                                     file.WriteLine($"{key} - NOT SET");
                                 }
@@ -649,7 +667,7 @@ namespace XIVSlothCombo
 
                         catch (Exception ex)
                         {
-                            Dalamud.Logging.PluginLog.Error(ex, "Debug Log");
+                            PluginLog.Error(ex, "Debug Log");
                             Service.ChatGui.Print("Unable to write Debug log.");
                             break;
                         }
@@ -661,7 +679,7 @@ namespace XIVSlothCombo
                     {
                         var jobname = ConfigWindow.groupedPresets.Where(x => x.Value.Any(y => y.Info.JobShorthand.Equals(argumentsParts[0].ToLower(), StringComparison.CurrentCultureIgnoreCase))).FirstOrDefault().Key;
                         var header = $"{jobname} - {argumentsParts[0].ToUpper()}";
-                        Dalamud.Logging.PluginLog.Debug($"{jobname}");
+                        PluginLog.Debug($"{jobname}");
                         PvEFeatures.HeaderToOpen = header;
                     }
                     break;
@@ -778,7 +796,7 @@ namespace XIVSlothCombo
                 .Where(id => id != 0)
                 .Select(id => (CustomComboPreset)id)
                 .ToHashSet();
-            Service.Configuration.EnabledActions4 = new();
+            Service.Configuration.EnabledActions4 = [];
             Service.Configuration.Save();
         }
     }

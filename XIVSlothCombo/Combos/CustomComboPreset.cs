@@ -228,7 +228,7 @@ namespace XIVSlothCombo.Combos
 
         #region Healing
         [ReplaceSkill(AST.Benefic2)]
-        [CustomComboInfo("Simple Heals (Single Target)", "", AST.JobID, 2)]
+        [CustomComboInfo("Simple Heals (Single Target)", "Replaces Benefic with a one button single target healing setup.", AST.JobID, 2)]
         AST_ST_SimpleHeals = 1023,
 
         [ParentCombo(AST_ST_SimpleHeals)]
@@ -252,7 +252,7 @@ namespace XIVSlothCombo.Combos
         AST_ST_SimpleHeals_Exaltation = 1028,
 
         [ReplaceSkill(AST.AspectedHelios)]
-        [CustomComboInfo("Aspected Helios Feature", "Replaces Aspected Helios whenever you are under Aspected Helios regen with Helios", AST.JobID, 3, "", "")]
+        [CustomComboInfo("Simple Heals (AoE)", "Replaces Aspected Helios with a one button AoE healing setup.", AST.JobID, 3, "", "")]
         AST_AoE_SimpleHeals_AspectedHelios = 1010,
 
         [ParentCombo(AST_AoE_SimpleHeals_AspectedHelios)]
@@ -3537,7 +3537,7 @@ namespace XIVSlothCombo.Combos
         #region Single Target DPS Feature
 
         [ReplaceSkill(WHM.Stone1, WHM.Stone2, WHM.Stone3, WHM.Stone4, WHM.Glare1, WHM.Glare3)]
-        [CustomComboInfo("Single Target DPS Feature", "Collection of cooldowns and spell features on Glare/Stone.", WHM.JobID, 10, "", "")]
+        [CustomComboInfo("Single Target DPS Feature", "Collection of cooldowns and spell features on Glare/Stone.", WHM.JobID, 1, "", "")]
         WHM_ST_MainCombo = 19099,
 
         [ParentCombo(WHM_ST_MainCombo)]
@@ -3574,7 +3574,7 @@ namespace XIVSlothCombo.Combos
         #region AoE DPS Feature
 
         [ReplaceSkill(WHM.Holy, WHM.Holy3)]
-        [CustomComboInfo("AoE DPS Feature", "Collection of cooldowns and spell features on Holy/Holy III.", WHM.JobID, 20, "", "")]
+        [CustomComboInfo("AoE DPS Feature", "Collection of cooldowns and spell features on Holy/Holy III.", WHM.JobID, 2, "", "")]
         WHM_AoE_DPS = 19190,
 
         [ParentCombo(WHM_AoE_DPS)]
@@ -3656,21 +3656,77 @@ namespace XIVSlothCombo.Combos
 
         #region Medica Feature
 
-        [ReplaceSkill(WHM.Medica2)]
-        [CustomComboInfo("Medica II Feature", "Replaces Medica II with Medica whenever you are under Medica II's regen effect or below Lv.50.", WHM.JobID, 60, "", "")]
-        WHM_Medica = 19007,
+        [ReplaceSkill(WHM.Medica)]
+        [CustomComboInfo("Simple Heals (AoE)", "Replaces Medica with a one button AoE healing setup.", WHM.JobID, 4, "", "")]
+        WHM_AoEHeals = 19007,
 
-        [ParentCombo(WHM_Medica)]
-        [CustomComboInfo("Afflatus Rapture Option", "Adds Afflatus Rapture when available.", WHM.JobID, 61, "", "")]
-        WHM_Medica_Rapture = 19011,
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Afflatus Rapture Option", "Uses Afflatus Rapture when available.", WHM.JobID, 61, "", "")]
+        WHM_AoEHeals_Rapture = 19011,
 
-        [ParentCombo(WHM_Medica)]
-        [CustomComboInfo("Afflatus Misery Option", "Adds Afflatus Misery when available.", WHM.JobID, 62, "", "")]
-        WHM_Medica_Misery = 19010,
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Afflatus Misery Option", "Uses Afflatus Misery when available.", WHM.JobID, 62, "", "")]
+        WHM_AoEHeals_Misery = 19010,
 
-        [ParentCombo(WHM_Medica)]
-        [CustomComboInfo("Thin Air Option", "Adds Thin Air when available.", WHM.JobID, 63, "", "")]
-        WHM_Medica_ThinAir = 19200,
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Thin Air Option", "Uses Thin Air when available.", WHM.JobID, 63, "", "")]
+        WHM_AoeHeals_ThinAir = 19200,
+
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Cure III Option", "Replaces Medica with Cure III when available.", WHM.JobID)]
+        WHM_AoEHeals_Cure3 = 19201,
+
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Assize Option", "Uses Assize when available.", WHM.JobID)]
+        WHM_AoEHeals_Assize = 19202,
+
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Plenary Indulgence Option", "Uses Plenary Indulgence when available.", WHM.JobID)]
+        WHM_AoEHeals_Plenary = 19203,
+
+        [ParentCombo(WHM_AoEHeals)]
+        [CustomComboInfo("Lucid Dreaming Option", "Uses Lucid Dreaming when available.", WHM.JobID)]
+        WHM_AoEHeals_Lucid = 19204,
+
+        #endregion
+
+        #region Single Target Heals
+
+        [ReplaceSkill(WHM.Cure)]
+        [CustomComboInfo("Simple Heals (Single Target)", "Replaces Cure with a one button single target healing setup.", WHM.JobID, 3)]
+        WHM_STHeals = 19300,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Regen Option", "Applies Regen to the target if missing.", WHM.JobID)]
+        WHM_STHeals_Regen = 19301,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Benediction Option", "Uses Benediction when target is below HP threshold.", WHM.JobID)]
+        WHM_STHeals_Benediction = 19302,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Afflatus Solace Option", "Uses Afflatus Solace when available.", WHM.JobID)]
+        WHM_STHeals_Solace = 19303,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Thin Air Option", "Uses Thin Air when available.", WHM.JobID)]
+        WHM_STHeals_ThinAir = 19304,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Tetragrammaton Option", "Uses Tetragrammaton when available.", WHM.JobID)]
+        WHM_STHeals_Tetragrammaton = 19305,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Divine Benison Option", "Uses Divine Benison when available.", WHM.JobID)]
+        WHM_STHeals_Benison = 19306,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Aqualveil Option", "Uses Aquaveil when available.", WHM.JobID)]
+        WHM_STHeals_Aquaveil = 19307,
+
+        [ParentCombo(WHM_STHeals)]
+        [CustomComboInfo("Lucid Dreaming Option", "Uses Lucid Dreaming when available.", WHM.JobID)]
+        WHM_STHeals_Lucid = 19308,
 
         #endregion
 
