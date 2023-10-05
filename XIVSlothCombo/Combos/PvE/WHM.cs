@@ -241,7 +241,7 @@ namespace XIVSlothCombo.Combos.PvE
                     // Bypass counter when disabled
                     if (IsNotEnabled(CustomComboPreset.WHM_ST_MainCombo_NoSwiftOpener) || !LevelChecked(Glare3)) glare3Count = 3;
 
-                    if (CanSpellWeave(actionID) && openerDelayComplete)
+                    if (CanSpellWeave(actionID, 0.3) && openerDelayComplete)
                     {
                         bool lucidReady = IsOffCooldown(All.LucidDreaming) && LevelChecked(All.LucidDreaming) && LocalPlayer.CurrentMp <= Config.WHM_ST_Lucid;
                         bool pomReady = LevelChecked(PresenceOfMind) && IsOffCooldown(PresenceOfMind);
@@ -249,7 +249,6 @@ namespace XIVSlothCombo.Combos.PvE
                         bool pomEnabled = IsEnabled(CustomComboPreset.WHM_ST_MainCombo_PresenceOfMind);
                         bool assizeEnabled = IsEnabled(CustomComboPreset.WHM_ST_MainCombo_Assize);
                         bool lucidEnabled = IsEnabled(CustomComboPreset.WHM_ST_MainCombo_Lucid);
-
 
                         if (IsEnabled(CustomComboPreset.WHM_DPS_Variant_Rampart) &&
                             IsEnabled(Variant.VariantRampart) &&
@@ -297,7 +296,7 @@ namespace XIVSlothCombo.Combos.PvE
             }
         }
 
-        internal class WHM_Medica : CustomCombo
+        internal class WHM_AoEHeals : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.WHM_AoEHeals;
 
@@ -441,7 +440,7 @@ namespace XIVSlothCombo.Combos.PvE
                         HasBattleTarget())
                         return Variant.VariantSpiritDart;
 
-                    if (CanSpellWeave(actionID) || IsMoving)
+                    if (CanSpellWeave(actionID, 0.3))
                     {
                         if (IsEnabled(CustomComboPreset.WHM_AoE_DPS_PresenceOfMind) && ActionReady(PresenceOfMind))
                             return PresenceOfMind;
