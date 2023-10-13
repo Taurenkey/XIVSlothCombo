@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System;
@@ -400,6 +401,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
                 var enemyChara = CharacterManager.Instance()->LookupBattleCharaByObjectId(enemy.ObjectId);
                 if (enemyChara->Character.InCombat)
                 {
+                    if (!ActionManager.CanUseActionOnTarget(7, enemy.GameObject())) continue;
                     if (!enemyChara->Character.GameObject.GetIsTargetable()) continue;
 
                     if (!OutOfRange(spellCheck, enemy))

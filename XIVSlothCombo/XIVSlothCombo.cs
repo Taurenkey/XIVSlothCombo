@@ -1,10 +1,11 @@
-using Dalamud.Game;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -21,11 +22,10 @@ using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Combos.PvP;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.Data;
+using XIVSlothCombo.Extensions;
 using XIVSlothCombo.Services;
 using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
-using ECommons;
-using Dalamud.Plugin.Services;
 using static XIVSlothCombo.CustomComboNS.Functions.CustomComboFunctions;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
@@ -38,7 +38,7 @@ namespace XIVSlothCombo
 
         private readonly ConfigWindow configWindow;
         private HttpClient httpClient = new();
-        
+
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
 
@@ -103,134 +103,184 @@ namespace XIVSlothCombo
 
             if (!TM.IsBusy)
             {
-                TM.DelayNext("DelayAuto", 750);
+                TM.DelayNext("DelayAuto", 300);
                 TM.Enqueue(() =>
                 {
-                    var party = GetPartyMembers();
-
-                    if (PartyInCombat())
+                    if (Service.Configuration.AutoHealer && JobIDs.Healer.Contains((byte)JobID!))
                     {
-                        if (Service.Configuration.AutoHealer)
+                        var party = GetPartyMembers();
+
+                        if (Svc.DutyState.IsDutyStarted)
                         {
-                            if (JobIDs.Healer.Contains((byte)JobID!))
+                            ushort regenshield = JobID switch
                             {
-                                var newTarget = party.Where(x => !x.IsDead && x.GetRole() == CombatRole.DPS).FirstOrDefault()?.TargetObject;
+                                AST.JobID => AST.Buffs.AspectedBenefic,
+                                SCH.JobID => SCH.Buffs.Galvanize,
+                                WHM.JobID => WHM.Buffs.Regen,
+                                _ => throw new NotImplementedException()
+                            };
 
-                                var lowestHealth = party.Where(x => !x.IsDead).Min(x => (double)x.CurrentHp / x.MaxHp);
-                                var lowestHealthTarget = party.Where(x => !x.IsDead).MinBy(x => (double)x.CurrentHp / x.MaxHp).ObjectId;
+                            uint regenshieldSpell = JobID switch
+                            {
+                                AST.JobID => AST.AspectedBenefic,
+                                SCH.JobID => SCH.Adloquium,
+                                WHM.JobID => WHM.Regen,
+                                _ => throw new NotImplementedException()
+                            };
 
-                                uint sthSpell = JobID switch
+                            if (Svc.Targets.FocusTarget != null && (FindEffectOnMember(regenshield, Svc.Targets.FocusTarget) is null || FindEffectOnMember(regenshield, Svc.Targets.FocusTarget).RemainingTime <= 5f))
+                            {
+                                if (Svc.Objects.Where(x => !x.IsDead && x.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc).Cast<BattleNpc>().Where(x => x.BattleNpcKind == Dalamud.Game.ClientState.Objects.Enums.BattleNpcSubKind.Enemy && x.CanAutoAttack()).Min(x => GetTargetDistance(x)) <= 30)
                                 {
-                                    AST.JobID => AST.Benefic2,
-                                    SCH.JobID => SCH.Physick,
-                                    WHM.JobID => WHM.Cure,
-                                    _ => throw new NotImplementedException()
-                                };
-
-                                uint aoehSpell = JobID switch
-                                {
-                                    AST.JobID => AST.AspectedHelios,
-                                    SCH.JobID => SCH.Succor,
-                                    WHM.JobID => WHM.Medica,
-                                    _ => throw new NotImplementedException(),
-                                };
-
-                                uint stdSpell = JobID switch
-                                {
-                                    AST.JobID => AST.Config.AST_DPS_AltMode == 0 ? AST.Malefic : AST.Combust,
-                                    SCH.JobID => !SCH.Config.SCH_ST_DPS_Adv || SCH.Config.SCH_ST_DPS_Adv_Actions[0] ? SCH.Broil : SCH.Config.SCH_ST_DPS_Adv_Actions[1] ? SCH.Bio : SCH.Ruin2,
-                                    WHM.JobID => WHM.Stone1,
-                                    _ => throw new NotImplementedException()
-                                };
-
-                                uint aoedSpell = JobID switch
-                                {
-                                    AST.JobID => AST.Gravity,
-                                    SCH.JobID => SCH.ArtOfWar,
-                                    WHM.JobID => WHM.Holy,
-                                    _ => throw new NotImplementedException()
-                                };
-
-                                var adjustedAoeH = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
-                                var aoeSpellRange = ActionWatching.ActionSheet.Values.First(x => x.RowId == adjustedAoeH).EffectRange;
-                                var averagePartyHealth = party.Where(x => x.YalmDistanceX <= aoehSpell && !x.IsDead).Average(x => (double)x.CurrentHp / x.MaxHp);
-
-
-                                if ((averagePartyHealth * 100) <= Service.Configuration.AutoHealAoE)
-                                {
-                                    var spell = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(regenshieldSpell);
                                     if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
-                                        return;
+                                       goto NonRegen;
+
+                                    if (Svc.Targets.FocusTarget.IsDead)
+                                        goto NonRegen;
 
                                     if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
-                                        return;
+                                        goto NonRegen;
 
-                                    if (!LevelChecked(spell)) return;
+                                    if (!LevelChecked(spell)) goto NonRegen;
 
-                                    if (LocalPlayer.CastActionId == aoehSpell)
-                                        return;
-
-                                    ActionManager.Instance()->UseAction(ActionType.Action, aoehSpell);
-                                    return;
-                                }
-
-
-                                if ((lowestHealth * 100) <= Service.Configuration.AutoHealST)
-                                {
-                                    var spell = ActionManager.Instance()->GetAdjustedActionId(sthSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
-                                        return;
-
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
-                                        return;
-
-                                    if (!LevelChecked(spell)) return;
-
-                                    if (WasLastAction(sthSpell) || ActionManager.Instance()->QueuedActionId == sthSpell)
-                                        return;
-
-                                    Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
-                                    ActionManager.Instance()->UseAction(ActionType.Action, sthSpell, lowestHealthTarget);
-                                    return;
-                                }
-
-                                //if (newTarget != null && !HasBattleTarget()) Svc.Targets.Target = newTarget;
-
-                                if (NumberOfEnemiesInCombat(aoedSpell) >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(aoedSpell)))
-                                {
-                                    var spell = ActionManager.Instance()->GetAdjustedActionId(aoedSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
-                                        return;
-
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
-                                        return;
-
-                                    if (!LevelChecked(spell)) return;
-
-                                    ActionManager.Instance()->UseAction(ActionType.Action, aoedSpell);
-                                    return;
-                                }
-                                else
-                                {
-                                    //if (LocalPlayer.TargetObject is null) return;
-
-                                    var spell = ActionManager.Instance()->GetAdjustedActionId(stdSpell);
-                                    if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
-                                        return;
-
-                                    if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
-                                        return;
-
-                                    if (!LevelChecked(spell)) return;
-
-                                    if (EnemiesInRange(stdSpell))
+                                    Svc.Targets.Target = Svc.Targets.FocusTarget;
+                                    if (ActionManager.CanUseActionOnTarget(spell, Svc.Targets.Target.Struct()) && !ActionWatching.OutOfRange(spell, LocalPlayer.GameObject(), Svc.Targets.Target.Struct()))
                                     {
-                                        ActionManager.Instance()->UseAction(ActionType.Action, stdSpell);
+                                        ActionManager.Instance()->UseAction(ActionType.Action, regenshieldSpell);
                                         return;
                                     }
                                 }
+                            }
+                        }
+
+                        if (GenericHelpers.IsKeyPressed(System.Windows.Forms.Keys.LButton) && GenericHelpers.IsKeyPressed(System.Windows.Forms.Keys.RButton))
+                            return;
+
+                        NonRegen:
+                        if (PartyInCombat())
+                        {
+                            var newTarget = party.Where(x => !x.IsDead && x.GetRole() == CombatRole.DPS).FirstOrDefault()?.TargetObject;
+
+                            var lowestHealth = party.Where(x => !x.IsDead).Min(x => (double)x.CurrentHp / x.MaxHp);
+                            var lowestHealthTarget = party.Where(x => !x.IsDead).MinBy(x => (double)x.CurrentHp / x.MaxHp).ObjectId;
+
+                            uint sthSpell = JobID switch
+                            {
+                                AST.JobID => AST.Benefic2,
+                                SCH.JobID => SCH.Physick,
+                                WHM.JobID => WHM.Cure,
+                                _ => throw new NotImplementedException()
+                            };
+
+                            uint aoehSpell = JobID switch
+                            {
+                                AST.JobID => AST.AspectedHelios,
+                                SCH.JobID => SCH.Succor,
+                                WHM.JobID => WHM.Medica,
+                                _ => throw new NotImplementedException(),
+                            };
+
+                            uint stdSpell = JobID switch
+                            {
+                                AST.JobID => AST.Config.AST_DPS_AltMode == 0 ? AST.Malefic : AST.Combust,
+                                SCH.JobID => !SCH.Config.SCH_ST_DPS_Adv || SCH.Config.SCH_ST_DPS_Adv_Actions[0] ? SCH.Broil : SCH.Config.SCH_ST_DPS_Adv_Actions[1] ? SCH.Bio : SCH.Ruin2,
+                                WHM.JobID => WHM.Stone1,
+                                _ => throw new NotImplementedException()
+                            };
+
+                            uint aoedSpell = JobID switch
+                            {
+                                AST.JobID => AST.Gravity,
+                                SCH.JobID => SCH.ArtOfWar,
+                                WHM.JobID => WHM.Holy,
+                                _ => throw new NotImplementedException()
+                            };
 
 
+
+                            var adjustedAoeH = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
+                            var aoeSpellRange = ActionWatching.ActionSheet.Values.First(x => x.RowId == adjustedAoeH).EffectRange;
+                            var averagePartyHealth = party.Where(x => x.YalmDistanceX <= aoehSpell && !x.IsDead).Average(x => (double)x.CurrentHp / x.MaxHp);
+
+                            if (HasEffect(All.Buffs.Swiftcast))
+                                return;
+
+                            if ((averagePartyHealth * 100) <= Service.Configuration.AutoHealAoE)
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(aoehSpell);
+                                //if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
+                                //    return;
+
+                                if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                if (LocalPlayer.CastActionId == aoehSpell)
+                                    return;
+
+                                ActionManager.Instance()->UseAction(ActionType.Action, aoehSpell);
+                                return;
+                            }
+
+
+                            if ((lowestHealth * 100) <= Service.Configuration.AutoHealST)
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(sthSpell);
+                                //if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
+                                //    return;
+
+                                if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                if (WasLastAction(sthSpell) || ActionManager.Instance()->QueuedActionId == sthSpell)
+                                    return;
+
+                                Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
+                                ActionManager.Instance()->UseAction(ActionType.Action, sthSpell, lowestHealthTarget);
+                                return;
+                            }
+
+                            //if (newTarget != null && !HasBattleTarget()) Svc.Targets.Target = newTarget;
+
+                            if (NumberOfEnemiesInCombat(aoedSpell) >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(aoedSpell)))
+                            {
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(aoedSpell);
+                                //if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
+                                //    return;
+
+                                if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                ActionManager.Instance()->UseAction(ActionType.Action, aoedSpell);
+                                return;
+                            }
+                            else
+                            {
+                                //if (LocalPlayer.TargetObject is null) return;
+
+                                var spell = ActionManager.Instance()->GetAdjustedActionId(stdSpell);
+                                //if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
+                                //    return;
+
+                                if (ActionManager.Instance()->GetActionStatus(ActionType.Action, spell) != 0)
+                                    return;
+
+                                if (!LevelChecked(spell)) return;
+
+                                if (EnemiesInRange(stdSpell))
+                                {
+                                    if (HasBattleTarget() && !OutOfRange(spell, CurrentTarget!))
+                                        ActionManager.Instance()->UseAction(ActionType.Action, stdSpell, Svc.Targets.Target.ObjectId);
+                                    else
+                                        ActionManager.Instance()->UseAction(ActionType.Action, stdSpell);
+                                    return;
+                                }
                             }
                         }
                     }

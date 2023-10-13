@@ -310,10 +310,10 @@ namespace XIVSlothCombo.Combos.PvE
                     var canWeave = CanSpellWeave(actionID, 0.3);
                     bool lucidReady = ActionReady(All.LucidDreaming) && LocalPlayer.CurrentMp <= Config.WHM_AoEHeals_Lucid;
 
-                    if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Assize) && CanSpellWeave(actionID, 0.3) && ActionReady(Assize))
+                    if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Assize) && canWeave && ActionReady(Assize))
                         return Assize;
 
-                    if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Plenary) && ActionReady(PlenaryIndulgence))
+                    if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Plenary) && ActionReady(PlenaryIndulgence) && canWeave)
                         return PlenaryIndulgence;
 
                     if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Lucid) && canWeave && lucidReady)
@@ -323,7 +323,7 @@ namespace XIVSlothCombo.Combos.PvE
                         return AfflatusMisery;
                     if (IsEnabled(CustomComboPreset.WHM_AoEHeals_Rapture) && LevelChecked(AfflatusRapture) && gauge.Lily > 0)
                         return AfflatusRapture;
-                    if (IsEnabled(CustomComboPreset.WHM_AoeHeals_ThinAir) && thinAirReady)
+                    if (IsEnabled(CustomComboPreset.WHM_AoeHeals_ThinAir) && thinAirReady && canWeave)
                         return ThinAir;
 
                     if (party.Any(x => !x.IsDead && GetTargetDistance(x) < ActionWatching.GetActionEffectRange(Medica2) && FindEffectOnMember(Buffs.Medica2, x) == null) && !WasLastAction(Medica2) && ActionReady(Medica2))
@@ -367,7 +367,7 @@ namespace XIVSlothCombo.Combos.PvE
                     if (IsEnabled(CustomComboPreset.WHM_STHeals_Benison) && ActionReady(DivineBenison) && canWeave && FindEffectOnMember(Buffs.DivineBenison, healTarget) is null)
                         return DivineBenison;
 
-                    if (IsEnabled(CustomComboPreset.WHMPvP_Aquaveil) && ActionReady(Aquaveil) && canWeave && FindEffectOnMember(Buffs.Aquaveil, healTarget) is null)
+                    if (IsEnabled(CustomComboPreset.WHM_STHeals_Aquaveil) && ActionReady(Aquaveil) && canWeave && FindEffectOnMember(Buffs.Aquaveil, healTarget) is null)
                         return Aquaveil;
 
                     if (IsEnabled(CustomComboPreset.WHM_STHeals_Solace) && gauge.Lily > 0 && ActionReady(AfflatusSolace))
@@ -424,8 +424,9 @@ namespace XIVSlothCombo.Combos.PvE
 
                     bool liliesFullNoBlood = gauge.Lily == 3 && gauge.BloodLily < 3;
                     bool liliesNearlyFull = gauge.Lily == 2 && gauge.LilyTimer >= 17000;
+                    bool canWeave = CanSpellWeave(actionID, 0.3);
 
-                    if (IsEnabled(CustomComboPreset.WHM_AoE_DPS_Assize) && ActionReady(Assize))
+                    if (IsEnabled(CustomComboPreset.WHM_AoE_DPS_Assize) && ActionReady(Assize) && !IsMoving)
                         return Assize;
 
                     if (IsEnabled(CustomComboPreset.WHM_DPS_Variant_Rampart) &&

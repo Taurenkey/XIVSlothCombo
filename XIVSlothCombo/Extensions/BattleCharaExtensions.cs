@@ -1,4 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
+using ECommons.GameFunctions;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace XIVSlothCombo.Extensions
 {
@@ -24,5 +26,10 @@ namespace XIVSlothCombo.Extensions
         public static bool HasShield(this BattleChara chara) => chara.RawShieldValue() > 0;
 
         public static float RemainingCastTime(this BattleChara chara) => chara.TotalCastTime - chara.CurrentCastTime;
+
+        public static unsafe bool CanAutoAttack(this GameObject chara)
+        {
+            return ActionManager.CanUseActionOnTarget(7, chara.Struct());
+        }
     }
 }

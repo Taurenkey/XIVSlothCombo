@@ -107,5 +107,8 @@ namespace XIVSlothCombo.Services
 
         [PluginService]
         internal static IPluginLog PluginLog { get; private set; } = null!;
+
+        [PluginService]
+        internal static IDutyState DutyState { get; private set; } = null!;
     }
 }
