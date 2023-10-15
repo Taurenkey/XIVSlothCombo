@@ -424,7 +424,7 @@ namespace XIVSlothCombo.Combos.PvE
 
                     #region Pre-pull
                     // Simple ST Standard Step (pre-pull)
-                    if (Config.DNC_SimpleST_Dances[0] && !InCombat() && ActionReady(StandardStep) && IsOffCooldown(TechnicalStep) && IsOffCooldown(StandardStep))
+                    if (Config.DNC_SimpleST_Dances[0] && !InCombat() && LevelChecked(StandardStep) && IsOffCooldown(TechnicalStep) && IsOffCooldown(StandardStep))
                         return StandardStep;
                     #endregion
 
@@ -523,7 +523,7 @@ namespace XIVSlothCombo.Combos.PvE
 
                     // Simple ST Technical Step
                     if (Config.DNC_SimpleST_Dances[1] &&
-                        ActionReady(TechnicalStep) && !HasEffect(Buffs.StandardStep) && IsOffCooldown(TechnicalStep) &&
+                        LevelChecked(TechnicalStep) && !HasEffect(Buffs.StandardStep) && IsOffCooldown(TechnicalStep) &&
                         (!HasTarget() || GetTargetHPPercent() > 5))
                         return TechnicalStep;
 

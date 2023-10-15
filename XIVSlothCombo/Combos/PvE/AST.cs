@@ -187,7 +187,7 @@ namespace XIVSlothCombo.Combos.PvE
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.AST_Benefic;
 
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
-                => actionID is Benefic2 && !ActionReady(Benefic2) ? Benefic : actionID;
+                => actionID is Benefic2 && !LevelChecked(Benefic2) ? Benefic : actionID;
         }
 
         internal class AST_Raise_Alternative : CustomCombo
@@ -360,7 +360,7 @@ namespace XIVSlothCombo.Combos.PvE
                             CanSpellWeave(actionID))
                             return Horoscope;
 
-                        if ((ActionReady(AspectedHelios) && !HasEffect(Buffs.AspectedHelios))
+                        if ((LevelChecked(AspectedHelios) && !HasEffect(Buffs.AspectedHelios))
                              || HasEffect(Buffs.Horoscope)
                              || (HasEffect(Buffs.NeutralSect) && !HasEffect(Buffs.NeutralSectShield)))
                             return AspectedHelios;

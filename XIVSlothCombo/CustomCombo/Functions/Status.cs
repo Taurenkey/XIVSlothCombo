@@ -78,6 +78,11 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// <param name="obj"></param>
         /// <return> Status object or null. </return>
         public static Status? FindEffectOnMember(ushort effectID, GameObject? obj) => Service.ComboCache.GetStatus(effectID, obj, null);
+        public static bool FindEffectOnMember(ushort effectID, GameObject? obj, bool playerOwned, out Status? status)
+        {
+            status = playerOwned ? FindEffect(effectID, obj, LocalPlayer.ObjectId) : FindEffect(effectID, obj, null);
+            return status is not null;
+        }
 
         /// <summary> Returns the name of a status effect from its ID. </summary>
         /// <param name="id"> ID of the status. </param>

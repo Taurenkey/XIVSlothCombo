@@ -42,6 +42,7 @@ namespace XIVSlothCombo
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
 
+        bool SkipNextHeal = false;
         public TaskManager TM;
         public static uint? JobID
         {
@@ -108,31 +109,36 @@ namespace XIVSlothCombo
                 {
                     if (Service.Configuration.AutoHealer && JobIDs.Healer.Contains((byte)JobID!))
                     {
+                        if (HasEffect(418)) //Transcendent buff
+                            return;
+
                         var party = GetPartyMembers();
 
                         if (Svc.DutyState.IsDutyStarted)
                         {
-                            ushort regenshield = JobID switch
+                            ushort regenBuff = JobID switch
                             {
                                 AST.JobID => AST.Buffs.AspectedBenefic,
-                                SCH.JobID => SCH.Buffs.Galvanize,
                                 WHM.JobID => WHM.Buffs.Regen,
-                                _ => throw new NotImplementedException()
+                                _ => 0
                             };
 
-                            uint regenshieldSpell = JobID switch
+                            uint regenSpell = JobID switch
                             {
                                 AST.JobID => AST.AspectedBenefic,
-                                SCH.JobID => SCH.Adloquium,
                                 WHM.JobID => WHM.Regen,
-                                _ => throw new NotImplementedException()
+                                _ => 0
                             };
 
-                            if (Svc.Targets.FocusTarget != null && (FindEffectOnMember(regenshield, Svc.Targets.FocusTarget) is null || FindEffectOnMember(regenshield, Svc.Targets.FocusTarget).RemainingTime <= 5f))
+                            if (regenSpell != 0 && Svc.Targets.FocusTarget != null && (!FindEffectOnMember(regenBuff, Svc.Targets.FocusTarget, true, out var regen) || regen.RemainingTime <= 5f))
                             {
-                                if (Svc.Objects.Where(x => !x.IsDead && x.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc).Cast<BattleNpc>().Where(x => x.BattleNpcKind == Dalamud.Game.ClientState.Objects.Enums.BattleNpcSubKind.Enemy && x.CanAutoAttack()).Min(x => GetTargetDistance(x)) <= 30)
+                                var query = Svc.Objects.Where(x => !x.IsDead && x.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.BattleNpc).Cast<BattleNpc>().Where(x => x.BattleNpcKind == Dalamud.Game.ClientState.Objects.Enums.BattleNpcSubKind.Enemy && x.CanAutoAttack());
+                                if (!query.Any())
+                                    return;
+
+                                if (query.Min(x => GetTargetDistance(x, Svc.Targets.FocusTarget)) <= 30 || InCombat())
                                 {
-                                    var spell = ActionManager.Instance()->GetAdjustedActionId(regenshieldSpell);
+                                    var spell = ActionManager.Instance()->GetAdjustedActionId(regenSpell);
                                     if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
                                        goto NonRegen;
 
@@ -147,17 +153,18 @@ namespace XIVSlothCombo
                                     Svc.Targets.Target = Svc.Targets.FocusTarget;
                                     if (ActionManager.CanUseActionOnTarget(spell, Svc.Targets.Target.Struct()) && !ActionWatching.OutOfRange(spell, LocalPlayer.GameObject(), Svc.Targets.Target.Struct()))
                                     {
-                                        ActionManager.Instance()->UseAction(ActionType.Action, regenshieldSpell);
+                                        ActionManager.Instance()->UseAction(ActionType.Action, regenSpell);
                                         return;
                                     }
                                 }
                             }
                         }
 
+                    NonRegen:
                         if (GenericHelpers.IsKeyPressed(System.Windows.Forms.Keys.LButton) && GenericHelpers.IsKeyPressed(System.Windows.Forms.Keys.RButton))
                             return;
 
-                        NonRegen:
+
                         if (PartyInCombat())
                         {
                             var newTarget = party.Where(x => !x.IsDead && x.GetRole() == CombatRole.DPS).FirstOrDefault()?.TargetObject;
@@ -225,7 +232,7 @@ namespace XIVSlothCombo
                             }
 
 
-                            if ((lowestHealth * 100) <= Service.Configuration.AutoHealST)
+                            if ((lowestHealth * 100) <= Service.Configuration.AutoHealST && !SkipNextHeal)
                             {
                                 var spell = ActionManager.Instance()->GetAdjustedActionId(sthSpell);
                                 //if (ActionManager.GetAdjustedCastTime(ActionType.Action, spell) > 0 && IsMoving)
@@ -240,11 +247,27 @@ namespace XIVSlothCombo
                                     return;
 
                                 Svc.Targets.Target = Svc.Objects.First(x => x.ObjectId == lowestHealthTarget);
+                                if (ActionWatching.GetAttackType(spell) == ActionWatching.ActionAttackType.Ability) SkipNextHeal = true;
                                 ActionManager.Instance()->UseAction(ActionType.Action, sthSpell, lowestHealthTarget);
                                 return;
                             }
 
-                            //if (newTarget != null && !HasBattleTarget()) Svc.Targets.Target = newTarget;
+                            if (SkipNextHeal)
+                                SkipNextHeal = false;
+
+                            
+                            if (party.Any(x => x.StatusList.Any(y => y.GameData.CanDispel)))
+                            {
+                                var targ = party.OrderBy(x => x.GetRole() == CombatRole.Tank ? 1 : x.GetRole() == CombatRole.Healer ? 2 : 3).First(x => x.StatusList.Any(y => y.GameData.CanDispel));
+
+                                if (!ActionWatching.OutOfRange(All.Esuna, LocalPlayer.GameObject(), targ.GameObject()))
+                                {
+                                    Svc.Targets.Target = targ;
+                                    ActionManager.Instance()->UseAction(ActionType.Action, All.Esuna, targ.ObjectId);
+                                }
+
+                            }
+
 
                             if (NumberOfEnemiesInCombat(aoedSpell) >= 3 && LevelChecked(ActionManager.Instance()->GetAdjustedActionId(aoedSpell)))
                             {

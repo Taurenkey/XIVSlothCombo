@@ -83,7 +83,7 @@ namespace XIVSlothCombo.CustomComboNS.Functions
         /// <summary> Get Action Status == 0? It's ready fam.</summary>
         /// <param name="id"> ID of the action. </param>
         /// <returns></returns>
-        public unsafe static bool ActionReady(uint id) => ActionWatching.GetAttackType(id) == ActionWatching.ActionAttackType.Ability ? LevelChecked(id) && (IsOffCooldown(id) || GetRemainingCharges(id) > 0) : LevelChecked(id);
+        public unsafe static bool ActionReady(uint id) => LevelChecked(id) && HasCharges(id);
 
         /// <summary> Checks if the last action performed was the passed ID. </summary>
         /// <param name="id"> ID of the action. </param>
