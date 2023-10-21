@@ -8,6 +8,7 @@ using XIVSlothCombo.Combos.PvE.Content;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.CustomComboNS;
 using XIVSlothCombo.CustomComboNS.Functions;
+using XIVSlothCombo.Extensions;
 
 namespace XIVSlothCombo.Combos.PvE
 {
@@ -189,15 +190,18 @@ namespace XIVSlothCombo.Combos.PvE
 
                         if (IsEnabled(CustomComboPreset.WAR_ST_StormsPath_FellCleave) && LevelChecked(InnerBeast))
                         {
-                            if (HasEffect(Buffs.InnerRelease) || HasEffect(Buffs.NascentChaos))
+                            if (HasEffect(Buffs.InnerRelease) || (HasEffect(Buffs.NascentChaos) && InnerChaos.LevelChecked()))
                                 return OriginalHook(InnerBeast);
+
+                            if (HasEffect(Buffs.NascentChaos) && !InnerChaos.LevelChecked())
+                                return OriginalHook(Decimate);
                         }
 
                     }
 
                     if (comboTime > 0)
                     {
-                        if (LevelChecked(InnerBeast) && (!LevelChecked(StormsEye) || HasEffectAny(Buffs.SurgingTempest)) && gauge >= fellCleaveGaugeSpend)
+                        if (IsEnabled(CustomComboPreset.WAR_ST_StormsPath_FellCleave) && LevelChecked(InnerBeast) && (!LevelChecked(StormsEye) || HasEffectAny(Buffs.SurgingTempest)) && gauge >= fellCleaveGaugeSpend)
                             return OriginalHook(InnerBeast);
 
                         if (lastComboMove == HeavySwing && LevelChecked(Maim))

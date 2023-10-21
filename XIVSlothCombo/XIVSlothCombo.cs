@@ -28,6 +28,10 @@ using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
 using static XIVSlothCombo.CustomComboNS.Functions.CustomComboFunctions;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
+using ECommons;
+using Dalamud.Plugin.Services;
+using System.Reflection;
+using ECommons.DalamudServices;
 
 namespace XIVSlothCombo
 {
@@ -49,9 +53,9 @@ namespace XIVSlothCombo
             get => jobID;
             set
             {
-                if (jobID != value)
+                if (jobID != value && value != null)
                 {
-                    PluginLog.Debug($"Switched to job {value}");
+                    Service.PluginLog.Debug($"Switched to job {value}");
                     PvEFeatures.HasToOpenJob = true;
                 }
                 jobID = value;
@@ -337,6 +341,7 @@ namespace XIVSlothCombo
             Service.Configuration.ResetFeatures("v3.0.18.0_GNBCleanup", Enumerable.Range(7000, 700).ToArray());
             Service.Configuration.ResetFeatures("v3.0.18.0_PvPCleanup", Enumerable.Range(80000, 11000).ToArray());
             Service.Configuration.ResetFeatures("v3.0.18.1_PLDRework", Enumerable.Range(11000, 100).ToArray());
+            Service.Configuration.ResetFeatures("v3.1.0.1_BLMRework", Enumerable.Range(2000, 100).ToArray());
             Service.Configuration.ResetFeatures("v3.0.18.5_DNCRework", Enumerable.Range(4000, 300).ToArray());
         }
 
@@ -354,6 +359,7 @@ namespace XIVSlothCombo
         {
             try
             {
+                string basicMessage = $"Welcome to XIVSlothCombo v{this.GetType().Assembly.GetName().Version}!";
                 using HttpResponseMessage? motd = httpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
                 motd.EnsureSuccessStatusCode();
                 string? data = motd.Content.ReadAsStringAsync().Result;
@@ -361,7 +367,7 @@ namespace XIVSlothCombo
                 [
                     starterMotd,
                     EmphasisItalicPayload.ItalicsOn,
-                    new TextPayload(data.Trim()),
+                    string.IsNullOrEmpty(data) ? new TextPayload(basicMessage) : new TextPayload(data.Trim()),
                     EmphasisItalicPayload.ItalicsOff
                 ];
 
@@ -374,7 +380,7 @@ namespace XIVSlothCombo
 
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "Unable to retrieve MotD");
+                Service.PluginLog.Error(ex, "Unable to retrieve MotD");
             }
         }
 
@@ -389,7 +395,7 @@ namespace XIVSlothCombo
             Service.Framework.Update -= CheckCurrentJob;
             Svc.Framework.Update -= AutomaticPlay;
             Service.CommandManager.RemoveHandler(Command);
-
+            Service.Framework.Update -= CheckCurrentJob;
             Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
             Service.Interface.UiBuilder.Draw -= DrawUI;
 
@@ -404,8 +410,6 @@ namespace XIVSlothCombo
 
         private static void DisposeOpeners()
         {
-            BLM.BLM_ST_SimpleMode.BLMOpener.Dispose();
-            BLM.BLM_ST_AdvancedMode.BLMOpener.Dispose();
             NIN.NIN_ST_SimpleMode.NINOpener.Dispose();
             NIN.NIN_ST_AdvancedMode.NINOpener.Dispose();
         }
@@ -744,7 +748,7 @@ namespace XIVSlothCombo
 
                         catch (Exception ex)
                         {
-                            PluginLog.Error(ex, "Debug Log");
+                            Service.PluginLog.Error(ex, "Debug Log");
                             Service.ChatGui.Print("Unable to write Debug log.");
                             break;
                         }
@@ -756,7 +760,7 @@ namespace XIVSlothCombo
                     {
                         var jobname = ConfigWindow.groupedPresets.Where(x => x.Value.Any(y => y.Info.JobShorthand.Equals(argumentsParts[0].ToLower(), StringComparison.CurrentCultureIgnoreCase))).FirstOrDefault().Key;
                         var header = $"{jobname} - {argumentsParts[0].ToUpper()}";
-                        PluginLog.Debug($"{jobname}");
+                        Service.PluginLog.Debug($"{jobname}");
                         PvEFeatures.HeaderToOpen = header;
                     }
                     break;

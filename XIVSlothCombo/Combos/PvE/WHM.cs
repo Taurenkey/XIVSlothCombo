@@ -8,6 +8,8 @@ using XIVSlothCombo.Combos.PvE.Content;
 using XIVSlothCombo.CustomComboNS;
 using XIVSlothCombo.CustomComboNS.Functions;
 using XIVSlothCombo.Data;
+using XIVSlothCombo.Extensions;
+using XIVSlothCombo.Data;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace XIVSlothCombo.Combos.PvE
@@ -53,6 +55,10 @@ namespace XIVSlothCombo.Combos.PvE
             PresenceOfMind = 136,
             PlenaryIndulgence = 7433;
 
+        //Action Groups
+        internal static readonly List<uint>
+            StoneGlareList = [Stone1, Stone2, Stone3, Stone4, Glare1, Glare3];
+
         public static class Buffs
         {
             public const ushort
@@ -80,6 +86,8 @@ namespace XIVSlothCombo.Combos.PvE
                 { Dia, Debuffs.Dia }
             };
 
+
+
         public static class Config
         {
             internal static UserInt
@@ -95,13 +103,17 @@ namespace XIVSlothCombo.Combos.PvE
                 WHM_Benediction_HP = new("WHM_Benediction_HP");
             internal static UserBool
                 WHM_ST_MainCombo_DoT_Adv = new("WHM_ST_MainCombo_DoT_Adv"),
+                WHM_ST_MainCombo_Adv = new("WHM_ST_MainCombo_Adv"),
                 WHM_Afflatus_Adv = new("WHM_Afflatus_Adv"),
                 WHM_Afflatus_UIMouseOver = new("WHM_Afflatus_UIMouseOver"),
+                WHM_ST_Opener_Swiftcast = new("WHM_ST_Opener_Swiftcast"),
                 WHM_ST_UIMouseover = new("WHM_ST_UIMouseover");
             internal static UserFloat
                 WHM_ST_MainCombo_DoT_Threshold = new("WHM_ST_MainCombo_DoT_Threshold");
+            public static UserBoolArray
+                WHM_ST_MainCombo_Adv_Actions = new("WHM_ST_MainCombo_Adv_Actions");
         }
-
+        
         internal class WHM_SolaceMisery : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.WHM_SolaceMisery;
@@ -211,37 +223,60 @@ namespace XIVSlothCombo.Combos.PvE
         internal class WHM_ST_MainCombo : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.WHM_ST_MainCombo;
-            internal static uint glare3Count = 0;
-            internal static bool usedGlare3 = false;
+            internal static int Glare3Count => ActionWatching.CombatActions.Count(x => x == OriginalHook(Glare3));
+            internal static int DiaCount => ActionWatching.CombatActions.Count(x => x == OriginalHook(Dia));
 
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
             {
-                if (actionID is Glare3 or Glare1 or Stone1 or Stone2 or Stone3 or Stone4)
+                bool ActionFound;
+
+                if (Config.WHM_ST_MainCombo_Adv && Config.WHM_ST_MainCombo_Adv_Actions.Count > 0)
+                {
+                    bool onStones = Config.WHM_ST_MainCombo_Adv_Actions[0] && StoneGlareList.Contains(actionID);
+                    bool onAeros = Config.WHM_ST_MainCombo_Adv_Actions[1] && AeroList.ContainsKey(actionID);
+                    bool onStone2 = Config.WHM_ST_MainCombo_Adv_Actions[2] && actionID is Stone2;
+                    ActionFound = onStones || onAeros || onStone2;
+                }
+                else ActionFound = StoneGlareList.Contains(actionID); //default handling
+
+                if (ActionFound)
                 {
                     WHMGauge? gauge = GetJobGauge<WHMGauge>();
-                    bool openerDelayComplete = glare3Count >= 3;
+                    bool inOpener = IsEnabled(CustomComboPreset.WHM_ST_MainCombo_Opener) && Glare3Count < 4;
                     bool liliesFull = gauge.Lily == 3;
                     bool liliesNearlyFull = gauge.Lily == 2 && gauge.LilyTimer >= 17000;
-                    float glare3CD = GetCooldownRemainingTime(Glare3);
 
-                    // No-Swift Opener
-                    // Counter reset
-                    if (!InCombat()) glare3Count = 0;
-
-                    // Check Glare3 use
-                    if (InCombat() && usedGlare3 == false && lastComboMove == Glare3 && glare3CD > 1)
+                    if (inOpener)
                     {
-                        usedGlare3 = true;  // Registers that Glare3 was used and blocks further incrementation of glare3Count
-                        glare3Count++;      // Increments Glare3 counter
+                        if (Glare3Count == 0)
+                            return OriginalHook(Glare3);
+
+                        if (DiaCount == 0)
+                            return OriginalHook(Dia);
+
+                        if (Glare3Count == 3 && CanWeave(actionID))
+                        {
+                            if (ActionReady(All.Swiftcast) && Config.WHM_ST_Opener_Swiftcast)
+                                return OriginalHook(All.Swiftcast);
+
+                            if (ActionReady(PresenceOfMind))
+                            return PresenceOfMind;
+                        }
+
+                        if (Glare3Count == 4)
+                        {
+                            if (ActionReady(PresenceOfMind) && Config.WHM_ST_Opener_Swiftcast)
+                                return OriginalHook(PresenceOfMind);
+
+                            if (ActionReady(Assize))
+                            return Assize;
+                        }
+
+                        if (Glare3Count > 0)
+                            return OriginalHook(Glare3);
                     }
 
-                    // Check Glare3 use reset
-                    if (usedGlare3 == true && glare3CD < 1) usedGlare3 = false; // Resets block to allow "Check Glare3 use"
-
-                    // Bypass counter when disabled
-                    if (IsNotEnabled(CustomComboPreset.WHM_ST_MainCombo_NoSwiftOpener) || !LevelChecked(Glare3)) glare3Count = 3;
-
-                    if (CanSpellWeave(actionID, 0.3) && openerDelayComplete)
+                    if (CanSpellWeave(actionID))
                     {
                         bool lucidReady = IsOffCooldown(All.LucidDreaming) && LevelChecked(All.LucidDreaming) && LocalPlayer.CurrentMp <= Config.WHM_ST_Lucid;
                         bool pomReady = LevelChecked(PresenceOfMind) && IsOffCooldown(PresenceOfMind);
@@ -264,32 +299,37 @@ namespace XIVSlothCombo.Combos.PvE
                             return All.LucidDreaming;
                     }
 
-                    // DoTs
-                    if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_DoT) && InCombat() && LevelChecked(Aero) && HasBattleTarget())
+                    if (InCombat())
                     {
-                        Status? sustainedDamage = FindTargetEffect(Variant.Debuffs.SustainedDamage);
-                        if (IsEnabled(CustomComboPreset.WHM_DPS_Variant_SpiritDart) &&
-                            IsEnabled(Variant.VariantSpiritDart) &&
-                            (sustainedDamage is null || sustainedDamage?.RemainingTime <= 3) &&
-                            CanSpellWeave(actionID))
-                            return Variant.VariantSpiritDart;
+                        // DoTs
+                        if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_DoT) && LevelChecked(Aero) && HasBattleTarget())
+                        {
+                            Status? sustainedDamage = FindTargetEffect(Variant.Debuffs.SustainedDamage);
+                            if (IsEnabled(CustomComboPreset.WHM_DPS_Variant_SpiritDart) &&
+                                IsEnabled(Variant.VariantSpiritDart) &&
+                                (sustainedDamage is null || sustainedDamage?.RemainingTime <= 3) &&
+                                CanSpellWeave(actionID))
+                                return Variant.VariantSpiritDart;
 
-                        uint dot = OriginalHook(Aero); //Grab the appropriate DoT Action
-                        Status? dotDebuff = FindTargetEffect(AeroList[dot]); //Match it with it's Debuff ID, and check for the Debuff
+                            uint dot = OriginalHook(Aero); //Grab the appropriate DoT Action
+                            Status? dotDebuff = FindTargetEffect(AeroList[dot]); //Match it with it's Debuff ID, and check for the Debuff
 
-                        // DoT Uptime & HP% threshold
-                        float refreshtimer = Config.WHM_ST_MainCombo_DoT_Adv ? Config.WHM_ST_MainCombo_DoT_Threshold : 3;
-                        if ((dotDebuff is null || dotDebuff.RemainingTime <= refreshtimer) &&
-                            GetTargetHPPercent() > Config.WHM_ST_MainCombo_DoT)
-                            return OriginalHook(Aero);
+                            // DoT Uptime & HP% threshold
+                            float refreshtimer = Config.WHM_ST_MainCombo_DoT_Adv ? Config.WHM_ST_MainCombo_DoT_Threshold : 3;
+                            if ((dotDebuff is null || dotDebuff.RemainingTime <= refreshtimer) &&
+                                GetTargetHPPercent() > Config.WHM_ST_MainCombo_DoT)
+                                return OriginalHook(Aero);
+                        }
+
+                        if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_LilyOvercap) && LevelChecked(AfflatusRapture) &&
+                            (liliesFull || liliesNearlyFull))
+                            return AfflatusRapture;
+                        if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_Misery_oGCD) && LevelChecked(AfflatusMisery) &&
+                            gauge.BloodLily >= 3)
+                            return AfflatusMisery;
+
+                        return OriginalHook(Stone1);
                     }
-
-                    if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_LilyOvercap) && LevelChecked(AfflatusRapture) &&
-                        (liliesFull || liliesNearlyFull))
-                        return AfflatusRapture;
-                    if (IsEnabled(CustomComboPreset.WHM_ST_MainCombo_Misery_oGCD) && LevelChecked(AfflatusMisery) &&
-                        gauge.BloodLily >= 3 && openerDelayComplete)
-                        return AfflatusMisery;
                 }
 
                 return actionID;

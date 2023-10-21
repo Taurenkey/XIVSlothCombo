@@ -1305,11 +1305,12 @@ namespace XIVSlothCombo.Window.Functions
 
             if (preset is CustomComboPreset.BLM_AoE_Adv_Cooldowns)
             {
-                UserConfig.DrawGridMultiChoice(BLM.Config.BLM_AoE_Adv_Cooldowns_Choice, 4, new string[,]{
-                    {"Manafont", "Add Manafont to the rotation." },
+                UserConfig.DrawGridMultiChoice(BLM.Config.BLM_AoE_Adv_Cooldowns_Choice, 5, new string[,]{
+                    {$"Manafont", "Add Manafont to the rotation." },
                     {"Sharpcast", "Add Sharpcast to the rotation." },
                     {"Amplifier", "Add Amplifier to the rotation." },
                     {"Ley Lines", "Add Ley Lines to the rotation." },
+                    {"Triplecast", "Add Triplecast to the rotation" }
                 });
             }
 
@@ -1968,6 +1969,19 @@ namespace XIVSlothCombo.Window.Functions
                     ImGui.Unindent();
                 }
             }
+            if (preset == CustomComboPreset.PLD_ST_AdvancedMode_Atonement)
+            {
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_AtonementTiming, "Early Spend", "Uses Atonement before restarting the basic combo.", 1);
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_AtonementTiming, "Late Spend", "Uses Atonement before the end of the basic combo.", 2);
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_AtonementTiming, "Alternate Spend", "Switches between early and and late depending on how often Flight or Fight is used.", 3);
+            }
+
+            if (preset == CustomComboPreset.PLD_ST_AdvancedMode_HolySpirit)
+            {
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_DivineMightTiming, "Early Spend", "When under the effect of Divine Might, use Holy Spirit before restarting the basic combo.", 1);
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_DivineMightTiming, "Late Spend", "When under the effect of Divine Might, uses Holy Spirit before the end of the basic combo.", 2);
+                UserConfig.DrawRadioButton(PLD.Config.PLD_ST_DivineMightTiming, "Alternate Spend", "When under the effect of Divine Might, switches between early and late depending on how often Flight or Fight is used.", 3);
+            }
 
             #endregion
             // ====================================================================================
@@ -2230,8 +2244,12 @@ namespace XIVSlothCombo.Window.Functions
             if (preset is CustomComboPreset.SGE_ST_Heal_Druochole)
                 UserConfig.DrawSliderInt(0, 100, SGE.Config.SGE_ST_Heal_Druochole, "Use Druochole when Target HP is at or below set percentage");
 
-            if (preset is CustomComboPreset.SGE_ST_Heal_Diagnosis)
-                UserConfig.DrawSliderInt(0, 100, SGE.Config.SGE_ST_Heal_Diagnosis, "Use Diagnosis when Target HP is at or below set percentage");
+            if (preset is CustomComboPreset.SGE_ST_Heal_EDiagnosis)
+            {
+                UserConfig.DrawSliderInt(0, 100, SGE.Config.SGE_ST_Heal_EDiagnosisHP, "Use Eukrasian Diagnosis when Target HP is at or below set percentage");
+                UserConfig.DrawHorizontalMultiChoice(SGE.Config.SGE_ST_Heal_EDiagnosisOpts, "Ignore Shield Check", "Warning, will force the use of Eukrasia Diagnosis, and normal Diagnosis will be unavailable.", 2, 0);
+                UserConfig.DrawHorizontalMultiChoice(SGE.Config.SGE_ST_Heal_EDiagnosisOpts, "Check for Scholar Galvenize", "Enable to not override an existing Scholar's shield.", 2, 1);
+            }
 
             if (preset is CustomComboPreset.SGE_AoE_Heal_Kerachole)
                 UserConfig.DrawAdditionalBoolChoice(SGE.Config.SGE_AoE_Heal_KeracholeTrait,
@@ -2643,9 +2661,29 @@ namespace XIVSlothCombo.Window.Functions
 
             }
 
+            if (preset == CustomComboPreset.WARPvP_BurstMode_Blota)
+            {
+                UserConfig.DrawHorizontalRadioButton(WARPvP.Config.WARPVP_BlotaTiming, "Before Primal Rend", "", 0);
+                UserConfig.DrawHorizontalRadioButton(WARPvP.Config.WARPVP_BlotaTiming, "After Primal Rend", "", 1);
+            }
+
             #endregion
             // ====================================================================================
             #region WHITE MAGE
+
+            if (preset is CustomComboPreset.WHM_ST_MainCombo)
+            {
+                UserConfig.DrawAdditionalBoolChoice(WHM.Config.WHM_ST_MainCombo_Adv, "Advanced Action Options", "Change how actions are handled", isConditionalChoice: true);
+
+                if (WHM.Config.WHM_ST_MainCombo_Adv)
+                {
+                    ImGui.Indent(); ImGui.Spacing();
+                    UserConfig.DrawHorizontalMultiChoice(WHM.Config.WHM_ST_MainCombo_Adv_Actions, "On Stone/Glare", "Apply options to all Stones and Glares.", 3, 0);
+                    UserConfig.DrawHorizontalMultiChoice(WHM.Config.WHM_ST_MainCombo_Adv_Actions, "On Aero/Dia", "Apply options to Aeros and Dia.", 3, 1);
+                    UserConfig.DrawHorizontalMultiChoice(WHM.Config.WHM_ST_MainCombo_Adv_Actions, "On Stone II", "Apply options to Stone II.", 3, 2);
+                    ImGui.Unindent();
+                }
+            }
 
             if (preset == CustomComboPreset.WHM_ST_MainCombo_Lucid)
                 UserConfig.DrawSliderInt(4000, 9500, WHM.Config.WHM_ST_Lucid, "Set value for your MP to be at or under for this feature to work.", 150, SliderIncrements.Hundreds);
@@ -2703,6 +2741,9 @@ namespace XIVSlothCombo.Window.Functions
 
             if (preset == CustomComboPreset.WHM_STHeals_ThinAir)
                 UserConfig.DrawSliderInt(0, 1, WHM.Config.WHM_ST_ThinAir, "How many charges to keep ready? (0 = Use all)");
+
+            if (preset == CustomComboPreset.WHM_ST_MainCombo_Opener)
+                UserConfig.DrawAdditionalBoolChoice(WHM.Config.WHM_ST_Opener_Swiftcast, "Swiftcast Option", "Adds Swiftcast to the opener.");
 
             #endregion
             // ====================================================================================

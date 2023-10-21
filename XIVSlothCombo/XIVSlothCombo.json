@@ -1,11 +1,10 @@
 {
-    "Author": "Team Sloth",
-    "Name": "XIVSlothCombo",
-    "InternalName": "XIVSlothCombo",
-    "DalamudApiLevel": 9,
-    "Punchline": "Condenses combos and mutually exclusive abilities onto a single button - and then some.",
-    "Description": "Condenses combos and mutually exclusive abilities onto a single button - and then some.",
-    "RepoUrl": "https://github.com/Nik-Potokar/XIVSlothCombo",
-    "IconUrl": "https://i.imgur.com/iEcxM81.png",
-    "ImageUrls": [ "https://i.imgur.com/iEcxM81.png" ]
+  "Author": "Team Sloth",
+  "Name": "XIVSlothCombo",
+  "InternalName": "XIVSlothCombo",
+  "DalamudApiLevel": 9,
+  "Punchline": "Condenses combos and mutually exclusive abilities onto a single button - and then some.",
+  "Description": "Condenses combos and mutually exclusive abilities onto a single button - and then some.",
+  "RepoUrl": "https://github.com/Nik-Potokar/XIVSlothCombo",
+  "IconUrl": "https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/plugin/xivslothcombo.png",
 }

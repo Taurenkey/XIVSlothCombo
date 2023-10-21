@@ -32,7 +32,7 @@ namespace XIVSlothCombo.Core
                 .OrderByDescending(x => x.Preset)
                 .ToList();
 
-            getIconHook = Service.GameInteropProvider.HookFromAddress<GetIconDelegate>(Service.Address.GetAdjustedActionId, GetIconDetour);
+            getIconHook = Service.GameInteropProvider.HookFromAddress<GetIconDelegate>((nint)ActionManager.Addresses.GetAdjustedActionId.Value, GetIconDetour);
             isIconReplaceableHook = Service.GameInteropProvider.HookFromAddress<IsIconReplaceableDelegate>(Service.Address.IsActionIdReplaceable, IsIconReplaceableDetour);
 
             getIconHook.Enable();
@@ -83,7 +83,7 @@ namespace XIVSlothCombo.Core
 
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "Preset error");
+                Service.PluginLog.Error(ex, "Preset error");
                 return OriginalHook(actionID);
             }
         }
